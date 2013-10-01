@@ -18,9 +18,13 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".capture.CaptureActivity"
+            android:label="@string/title_activity_capture" >
+        </activity>
+        <activity
             android:name=".editor.AboutActivity"
             android:label="@string/title_activity_about" >
         </activity>
     </application>
-
+        
 </manifest>

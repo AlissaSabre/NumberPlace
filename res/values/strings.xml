@@ -27,5 +27,6 @@
     <string name="pad_label_clear">Clear</string>
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_about">About Number Place Breaker</string>
+    <string name="title_activity_capture">Capture Puzzle</string>
 
 </resources>

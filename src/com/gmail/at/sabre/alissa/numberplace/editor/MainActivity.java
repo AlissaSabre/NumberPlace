@@ -1,29 +1,31 @@
 package com.gmail.at.sabre.alissa.numberplace.editor;
 
 import com.gmail.at.sabre.alissa.numberplace.R;
+import com.gmail.at.sabre.alissa.numberplace.capture.CaptureActivity;
 import com.gmail.at.sabre.alissa.numberplace.solver.PuzzleSolver;
 
 import android.os.Bundle;
 import android.os.Handler;
 import android.app.Activity;
 import android.content.Intent;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
-import android.support.v4.app.NavUtils;
 
 public class MainActivity extends Activity {
 	
 	private Handler mHandler;
 	private PuzzleSolver mSolver;
 	private PuzzleEditorView mPuzzleEditor;
-	private View mBusy;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        findViewById(R.id.button_capture).setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				buttonCapture_onClick(v);
+			}
+		});
         findViewById(R.id.button_solve).setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				buttonSolve_onClick(v);
@@ -40,9 +42,9 @@ public class MainActivity extends Activity {
         mHandler = new Handler();
         mSolver = new PuzzleSolver();
         mPuzzleEditor = (PuzzleEditorView)findViewById(R.id.puzzleEditorView);
-}
+    }
     
-    @Override
+	@Override
     public void onSaveInstanceState(Bundle outState) {
     	super.onSaveInstanceState(outState);
     	mPuzzleEditor.saveState(outState);
@@ -59,6 +61,10 @@ public class MainActivity extends Activity {
     	super.onStop();
     	mSolver.stop();
     }
+
+    protected void buttonCapture_onClick(View v) {
+    	startActivity(new Intent(getApplicationContext(), CaptureActivity.class));				
+	}
 
     private void buttonSolve_onClick(View view) {
     	mPuzzleEditor.setEnabled(false);
