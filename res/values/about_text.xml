@@ -8,6 +8,8 @@ It is not a practical application; it is just an experiment or a proof-of-concep
 Please use it on your own risk.
 \nThis work was inspired by an excellent article by Naoyuki Tamura available as http://bach.istc.kobe-u.ac.jp/copris/puzzles/
 \n
+\nFull source code of this program is available on Github at http://github.com/AlissaSabre/NumberPlace
+\n
 \nThis program may use and/or contain whole or parts of unmodified works from the following open source projects.
 \n
 \nOpen Source Computer Vision Library for Android (OpenCV4Android), version 2.4.6,
