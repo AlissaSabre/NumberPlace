@@ -1,0 +1,65 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res/com.gmail.at.sabre.alissa.numberplace"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/RelativeLayout1"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".editor.MainActivity" >
+
+    <Button
+        android:id="@+id/button_capture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="18dp"
+        android:layout_marginTop="18dp"
+        android:text="@string/button_label_capture" />
+
+    <Button
+        android:id="@+id/button_solve"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/button_capture"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/button_capture"
+        android:layout_marginRight="18dp"
+        android:text="@string/button_label_solve" />
+
+    <Button
+        android:id="@+id/button_about"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/button_capture"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="18dp"
+        android:layout_marginRight="18dp"
+        android:text="@string/button_label_about" />
+
+    <com.gmail.at.sabre.alissa.numberplace.editor.PuzzleEditorView
+        android:id="@+id/puzzleEditorView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/button_capture"
+        app:fixedDigitColor="#000"
+        app:focusBorderColor="#F00"
+        app:focusBorderWidth="4dp"
+        app:majorBorderColor="#000"
+        app:majorBorderWidth="2dp"
+        app:minorBorderColor="#444"
+        app:minorBorderWidth="0dp"
+        app:solutionColor="#66F" />
+
+    <ProgressBar
+        android:id="@+id/busy"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:visibility="visible" />
+
+</RelativeLayout>

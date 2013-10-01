@@ -1,0 +1,15 @@
+<resources>
+    <declare-styleable name="PuzzleEditorView">
+        <attr name="majorBorderColor" format="color|reference" />
+        <attr name="majorBorderWidth" format="dimension" />
+        <attr name="minorBorderColor" format="color|reference" />
+        <attr name="minorBorderWidth" format="dimension" />
+        <attr name="focusBorderColor" format="color|reference" />
+        <attr name="focusBorderWidth" format="dimension" />
+        <attr name="fixedDigitColor" format="color|reference" />
+        <attr name="solutionColor" format="color|reference" />
+        <attr name="fontFamily" format="string" />
+        <attr name="fontScale" format="float" />
+        <attr name="fontAdjuster" format="dimension" />
+        </declare-styleable>
+</resources>

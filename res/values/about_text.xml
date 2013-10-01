@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<string name="about_text">
+Number Place Breaker by Alissa Sabre
+\n
+\nNumber Place Breaker is written by Alissa Sabre (http://alissa-sabre.cocolog-nifty.com).
+It is not a practical application; it is just an experiment or a proof-of-concept.
+Please use it on your own risk.
+\nThis work was inspired by an excellent article by Naoyuki Tamura available as http://bach.istc.kobe-u.ac.jp/copris/puzzles/
+\n
+\nThis program may use and/or contain whole or parts of unmodified works from the following open source projects.
+\n
+\nOpen Source Computer Vision Library for Android (OpenCV4Android), version 2.4.6,
+available through http://opencv.org 
+as http://sourceforge.net/projects/opencvlibrary/files/opencv-android/2.4.6/OpenCV-2.4.6-android-sdk-r2.zip/download, 
+distributed under the following license:
+\n
+\n  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
+\n  
+\n   By downloading, copying, installing or using the software you agree to this license.
+\n   If you do not agree to this license, do not download, install,
+\n   copy or use the software.
+\n  
+\n                            License Agreement
+\n                 For Open Source Computer Vision Library
+\n  
+\n  Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
+\n  Copyright (C) 2008-2011, Willow Garage Inc., all rights reserved.
+\n  Third party copyrights are property of their respective owners.
+\n  
+\n  Redistribution and use in source and binary forms, with or without modification,
+\n  are permitted provided that the following conditions are met:
+\n  
+\n    * Redistributions of source code must retain the above copyright notice,
+\n      this list of conditions and the following disclaimer.
+\n  
+\n    * Redistributions in binary form must reproduce the above copyright notice,
+\n      this list of conditions and the following disclaimer in the documentation
+\n      and/or other materials provided with the distribution.
+\n  
+\n    * The name of the copyright holders may not be used to endorse or promote products
+\n      derived from this software without specific prior written permission.
+\n  
+\n  This software is provided by the copyright holders and contributors "as is" and
+\n  any express or implied warranties, including, but not limited to, the implied
+\n  warranties of merchantability and fitness for a particular purpose are disclaimed.
+\n  In no event shall the Intel Corporation or contributors be liable for any direct,
+\n  indirect, incidental, special, exemplary, or consequential damages
+\n  (including, but not limited to, procurement of substitute goods or services;
+\n  loss of use, data, or profits; or business interruption) however caused
+\n  and on any theory of liability, whether in contract, strict liability,
+\n  or tort (including negligence or otherwise) arising in any way out of
+\n  the use of this software, even if advised of the possibility of such damage.
+\n
+\nSAT4J, version 2.3.4,
+available on http://www.sat4j.org, distributed under a dual-license of
+EPL 1.0 (http://www.eclipse.org/org/documents/epl-v10.php)
+and LGPL 2.1 (http://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html),
+which is a derivative work of 
+MiniSat, version 1.1.4 implementation, 
+the source code for which can be found at www.minisat.se, 
+under the following permissive license:
+\n
+\n  MiniSat -- Copyright (c) 2003-2005, Niklas Een, Niklas Sorensson
+\n  
+\n  Permission is hereby granted, free of charge, to any person obtaining a
+\n  copy of this software and associated documentation files (the
+\n  "Software"), to deal in the Software without restriction, including
+\n  without limitation the rights to use, copy, modify, merge, publish,
+\n  distribute, sublicense, and/or sell copies of the Software, and to
+\n  permit persons to whom the Software is furnished to do so, subject to
+\n  the following conditions:
+\n  
+\n  The above copyright notice and this permission notice shall be included
+\n  in all copies or substantial portions of the Software.
+\n  
+\n  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+\n  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+\n  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+\n  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+\n  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+\n  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+\n  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+\n
+\n“数独” and/or “Sudoku” appear registered trademarks by NIKOLI Co., Ltd. in Japan and some other countries.
+Other names for the puzzle, e.g. “ナンプレ”, “ナンバープレース”, “Number Place” may be trademarks of someone in somewhere on this planet. (I\'m not sure.)
+</string>
+</resources>

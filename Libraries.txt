@@ -1,0 +1,19 @@
+This program may use and/or contain whole or parts of unmodified works from the following open source projects.
+
+
+Open Source Computer Vision Library for Android (OpenCV4Android), version 2.4.6,
+available through http://opencv.org 
+as http://sourceforge.net/projects/opencvlibrary/files/opencv-android/2.4.6/OpenCV-2.4.6-android-sdk-r2.zip/download, 
+distributed under the so-called MIT license.
+
+
+SAT4J, version 2.3.4,
+available on http://www.sat4j.org, distributed under a dual-license of EPL and LGPL,
+which is a derivative work of 
+MiniSat, version 1.1.4 implementation, 
+the source code for which can be found at www.minisat.se, 
+under a permissive license.
+
+
+
+
