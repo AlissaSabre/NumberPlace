@@ -14,14 +14,10 @@ import android.graphics.Paint.FontMetrics;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.FloatMath;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 
 /**
  * TODO: document your custom view class.
@@ -321,7 +317,7 @@ public class PuzzleEditorView extends View {
     	final int h = mHeight = getHeight();
     	
     	// We draw a puzzle in a square, although the drawing code allows any rectangular form.  
-        final int t = Math.min(w, h) - (int)FloatMath.ceil(Math.max(mMajorBorderWidth, mMinorBorderWidth));
+        final int t = Math.min(w, h) - (int)Math.ceil(Math.max(mMajorBorderWidth, mMinorBorderWidth));
         final int st = t - t % 9;
         final int sw = mSaneWidth = st;
         final int sh = mSaneHeight = st;

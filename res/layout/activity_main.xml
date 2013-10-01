@@ -15,7 +15,7 @@
         android:layout_marginRight="18dp"
         android:layout_marginTop="18dp"
         android:text="@string/button_label_capture" />
-
+
     <Button
         android:id="@+id/button_solve"
         android:layout_width="wrap_content"
@@ -52,7 +52,7 @@
         app:minorBorderColor="#444"
         app:minorBorderWidth="0dp"
         app:solutionColor="#66F" />
-
+
     <ProgressBar
         android:id="@+id/busy"
         style="?android:attr/progressBarStyleLarge"
