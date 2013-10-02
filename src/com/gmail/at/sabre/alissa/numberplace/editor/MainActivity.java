@@ -1,5 +1,6 @@
 package com.gmail.at.sabre.alissa.numberplace.editor;
 
+import com.gmail.at.sabre.alissa.numberplace.K;
 import com.gmail.at.sabre.alissa.numberplace.R;
 import com.gmail.at.sabre.alissa.numberplace.capture.CaptureActivity;
 import com.gmail.at.sabre.alissa.numberplace.solver.PuzzleSolver;
@@ -12,6 +13,8 @@ import android.view.View;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
+	
+	private static final int REQ_CAPTURE = 1;
 	
 	private Handler mHandler;
 	private PuzzleSolver mSolver;
@@ -56,15 +59,33 @@ public class MainActivity extends Activity {
     	mPuzzleEditor.restoreState(savedInstanceState);
     }
 
-    @Override
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data); // Don't we need this?  FIXME
+		if (requestCode == REQ_CAPTURE && resultCode == RESULT_OK) {
+			Object obj = data.getSerializableExtra(K.PUZZLE_DATA);
+			// Hmm... It appears that a serialized byte[][] object ("[[B")
+			// is deserialized back as an Object[] containing byte[].
+			// I don't know why.  Anyway we need to live with it.
+			onPuzzleCapture(toByteArrayArray(obj));
+		}
+	}
+
+	@Override
     public void onStop() {
     	super.onStop();
     	mSolver.stop();
     }
 
-    protected void buttonCapture_onClick(View v) {
-    	startActivity(new Intent(getApplicationContext(), CaptureActivity.class));				
+    private void buttonCapture_onClick(View v) {
+    	Intent request = new Intent(getApplicationContext(), CaptureActivity.class);
+    	startActivityForResult(request, REQ_CAPTURE);
 	}
+    
+    private void onPuzzleCapture(byte[][] puzzle) {
+    	mPuzzleEditor.setFixedDigits(puzzle);
+    	mPuzzleEditor.setSolution(null);
+    }
 
     private void buttonSolve_onClick(View view) {
     	mPuzzleEditor.setEnabled(false);
@@ -86,14 +107,14 @@ public class MainActivity extends Activity {
     	    	final byte[][] solution = mSolver.solve(puzzle);
 				mHandler.post(new Runnable() {
 					public void run() {
-						showSolution(solution);
+						onPuzzleSolved(solution);
 					}
 				});
     		}
     	}.start();
     }
     
-    private void showSolution(byte[][] solution) {
+    private void onPuzzleSolved(byte[][] solution) {
     	mPuzzleEditor.setSolution(solution);
     	mPuzzleEditor.setEnabled(true);
 
@@ -110,5 +131,18 @@ public class MainActivity extends Activity {
     
     private void buttonAbout_onClick(View view) {
     	startActivity(new Intent(getApplicationContext(), AboutActivity.class));
+    }
+    
+    private byte[][] toByteArrayArray(Object obj) {
+    	try {
+    		Object[] src = (Object[])obj;
+    		byte[][] dst = new byte[src.length][];
+    		for (int i = 0; i < src.length; i++) {
+    			dst[i] = (byte[])src[i];
+    		}
+    		return dst;
+    	} catch (ClassCastException e) {
+    		return null;
+    	}
     }
 }
