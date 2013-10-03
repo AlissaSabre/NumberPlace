@@ -26,5 +26,7 @@
     <string name="pad_label_clear">Clear</string>
     <string name="title_activity_about">About Number Place Breaker</string>
     <string name="title_activity_capture">Capture Puzzle</string>
+    <string name="title_activity_rotation">Polling the camera natural rotation</string>
+    <string name="description_shoot">Shoot a puzzle picture.</string>
 
 </resources>

@@ -1,5 +1,21 @@
 package com.gmail.at.sabre.alissa.numberplace;
 
+/***
+ * A set of project wide constants.
+ * @author Alissa
+ */
 public interface K {
-	public static final String PUZZLE_DATA = K.class.getName() + ".PUZZLE_DATA";
+	
+	/***
+	 * A key to an intent extra to pass a number place puzzle data (as a byte[][] object.)
+	 * <p>
+	 * NOTE that a byte[][] object stored in intent appears to be gotten as an Object[] object.
+	 * I'm not sure why and when it happens.  The receiver needs to take care of it.
+	 * (Probably I was fool choosing byte[][] for a puzzle data...) 
+	 */
+	public static final String PUZZLE_DATA = "PUZZLE_DATA";
+	
+	public static final String PUZZLE_SOLUTION = "PUZZLE_SOLUTION";
+	
+	public static final String DEVICE_ROTATION = "DEVICE_ROTATION";
 }

@@ -79,6 +79,7 @@ public class MainActivity extends Activity {
 
     private void buttonCapture_onClick(View v) {
     	Intent request = new Intent(getApplicationContext(), CaptureActivity.class);
+		request.putExtra(K.DEVICE_ROTATION, getWindowManager().getDefaultDisplay().getRotation());
     	startActivityForResult(request, REQ_CAPTURE);
 	}
     
