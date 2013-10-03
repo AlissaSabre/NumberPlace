@@ -5,55 +5,12 @@
     android:layout_height="match_parent"
     tools:context=".capture.CaptureActivity" >
 
-    <SurfaceView
-        android:id="@+id/surfaceView"
+    <ImageView
+        android:id="@+id/imageView1"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true" />
-
-    <ImageButton
-        android:id="@+id/button_shoot_0"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginTop="@dimen/padding_small"
-        android:layout_marginRight="@dimen/padding_small"
-        android:contentDescription="@string/description_shoot"
-        android:src="@android:drawable/ic_menu_camera" />
-
-    <ImageButton
-        android:id="@+id/button_shoot_90"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_marginTop="@dimen/padding_small"
-        android:layout_marginLeft="@dimen/padding_small"
-        android:contentDescription="@string/description_shoot"
-        android:src="@android:drawable/ic_menu_camera" />
-
-    <ImageButton
-        android:id="@+id/button_shoot_180"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_marginBottom="@dimen/padding_small"
-        android:layout_marginLeft="@dimen/padding_small"
-        android:contentDescription="@string/description_shoot"
-        android:src="@android:drawable/ic_menu_camera" />
-
-    <ImageButton
-        android:id="@+id/button_shoot_270"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="@dimen/padding_small"
-        android:layout_marginRight="@dimen/padding_small"
-        android:contentDescription="@string/description_shoot"
+        android:layout_centerVertical="true"
         android:src="@android:drawable/ic_menu_camera" />
 
     <ProgressBar
@@ -63,5 +20,16 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true" />
+
+    <TextView
+        android:id="@+id/debug_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="14dp"
+        android:text="Debug Text"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:background="#CCF" />
 
 </RelativeLayout>
