@@ -7,8 +7,11 @@ import org.opencv.imgproc.Imgproc;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.util.Log;
 
 class CaptureWorkerThread extends Thread {
+	
+	private static final String TAG = ".numberplace..CaptureWorkerThread";
 	
 	public interface Callback {
 		public void onPuzzleRecognized(byte[][] puzzle, Bitmap bitmap);
@@ -64,7 +67,7 @@ class CaptureWorkerThread extends Thread {
 				puzzle = recognize(mBitmap);
 			}
 		} catch (Throwable e) {
-			// XXX;
+			Log.w(TAG, e.toString());
 		}
 		
 		Callback callback = mCallback;
@@ -102,7 +105,7 @@ class CaptureWorkerThread extends Thread {
 		Mat dst = new Mat();
 		ImageProcessing.recognize(src, dst);
 		
-		Bitmap dst_bitmap = Bitmap.createBitmap(src.width(), src.height(), Config.RGB_565);
+		Bitmap dst_bitmap = Bitmap.createBitmap(dst.width(), dst.height(), Config.ARGB_8888);
 		Utils.matToBitmap(dst, dst_bitmap);
 		
 		src.release();
