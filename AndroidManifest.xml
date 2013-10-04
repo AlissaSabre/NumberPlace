@@ -25,6 +25,9 @@
             android:label="@string/title_activity_capture">
         </activity>
         <activity
+            android:name=".capture.CameraActivity">
+        </activity>
+        <activity
             android:name=".editor.AboutActivity"
             android:label="@string/title_activity_about" >
         </activity>

@@ -34,7 +34,7 @@ import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 
 /**
- * @author seki
+ * @author alissa
  *
  */
 public class CaptureActivity extends Activity {
@@ -78,16 +78,17 @@ public class CaptureActivity extends Activity {
 //        	finish(); // XXX
 //        }
         
-        File dir = getApplicationContext().getDir("tmpimg", Context.MODE_WORLD_READABLE | Context.MODE_WORLD_WRITEABLE);
-        String filename = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".jpg";
-        File file = new File(dir, filename);
+//        File dir = getApplicationContext().getDir("tmpimg", Context.MODE_WORLD_READABLE | Context.MODE_WORLD_WRITEABLE);
+//        String filename = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".jpg";
+//        File file = new File(dir, filename);
         
         	
-        Intent request = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//        Intent request = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 //        request.setData(Uri.fromFile(file));
 //        request.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 //        request.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-        request.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(file));
+//        request.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(file));
+        Intent request = new Intent(this, CameraActivity.class);
         startActivityForResult(request, REQ_CAMERA);
     }
 
