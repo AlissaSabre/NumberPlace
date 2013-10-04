@@ -22,12 +22,13 @@
         </activity>
         <activity
             android:name=".capture.CaptureActivity"
-            android:label="@string/title_activity_capture"
-            android:screenOrientation="landscape" android:theme="@style/AppTheme.Fullscreen">
-            <!-- Note that the CaptureActivity appears to user as properly rotating,
-            	 although it is marked as landscape only.
-                 See the source code CaptureActivity.java for why.  -->
+            android:label="@string/title_activity_capture" >
         </activity>
+        <activity
+            android:name=".capture.CameraActivity"
+            android:label="@string/title_activity_camera"
+            android:screenOrientation="landscape" android:theme="@style/AppTheme.Fullscreen" >
+        </activity>           
         <activity
             android:name=".editor.AboutActivity"
             android:label="@string/title_activity_about" >

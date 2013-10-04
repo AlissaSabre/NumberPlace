@@ -13,9 +13,11 @@ public interface K {
 	 * I'm not sure why and when it happens.  The receiver needs to take care of it.
 	 * (Probably I was fool choosing byte[][] for a puzzle data...) 
 	 */
-	public static final String PUZZLE_DATA = "PUZZLE_DATA";
+	public static final String EXTRA_PUZZLE_DATA = "PUZZLE_DATA";
 	
-	public static final String PUZZLE_SOLUTION = "PUZZLE_SOLUTION";
+	public static final String EXTRA_PUZZLE_SOLUTION = "PUZZLE_SOLUTION";
 	
-	public static final String DEVICE_ROTATION = "DEVICE_ROTATION";
+	public static final String EXTRA_DEVICE_ROTATION = "DEVICE_ROTATION";
+	
+	public static final String EXTRA_IMAGE_DATA = "IMAGE_DATA";
 }

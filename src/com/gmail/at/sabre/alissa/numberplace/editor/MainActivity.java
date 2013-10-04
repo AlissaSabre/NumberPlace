@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data); // Don't we need this?  FIXME
 		if (requestCode == REQ_CAPTURE && resultCode == RESULT_OK) {
-			Object obj = data.getSerializableExtra(K.PUZZLE_DATA);
+			Object obj = data.getSerializableExtra(K.EXTRA_PUZZLE_DATA);
 			// Hmm... It appears that a serialized byte[][] object ("[[B")
 			// is deserialized back as an Object[] containing byte[].
 			// I don't know why.  Anyway we need to live with it.
@@ -79,7 +79,7 @@ public class MainActivity extends Activity {
 
     private void buttonCapture_onClick(View v) {
     	Intent request = new Intent(getApplicationContext(), CaptureActivity.class);
-		request.putExtra(K.DEVICE_ROTATION, getWindowManager().getDefaultDisplay().getRotation());
+		request.putExtra(K.EXTRA_DEVICE_ROTATION, getWindowManager().getDefaultDisplay().getRotation());
     	startActivityForResult(request, REQ_CAPTURE);
 	}
     
