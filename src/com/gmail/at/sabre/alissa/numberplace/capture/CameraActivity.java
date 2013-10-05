@@ -34,7 +34,7 @@ import android.widget.ImageView.ScaleType;
  */
 public class CameraActivity extends Activity implements SurfaceHolder.Callback, View.OnClickListener {
 	
-	private boolean USE_MOCK_IMAGE = true;
+	private boolean USE_MOCK_IMAGE = false;
 	
 	private static final int MAX_SIZE = 1024;
 	

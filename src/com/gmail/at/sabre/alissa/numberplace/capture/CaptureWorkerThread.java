@@ -60,7 +60,6 @@ class CaptureWorkerThread extends Thread {
 			return; // XXX
 		}
 		
-//		byte[][] puzzle = null;
 		Bitmap puzzle = null;
 		// try {
 			if (mBitmap != null) {

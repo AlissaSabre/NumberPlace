@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gmail.at.sabre.alissa.numberplace"
-    android:versionCode="1"
-    android:versionName="0.60" >
+    android:versionCode="2"
+    android:versionName="0.61" >
 
     <uses-sdk
         android:minSdkVersion="8"

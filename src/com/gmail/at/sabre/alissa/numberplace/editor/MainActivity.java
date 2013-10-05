@@ -1,5 +1,10 @@
 package com.gmail.at.sabre.alissa.numberplace.editor;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.InstallCallbackInterface;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+
 import com.gmail.at.sabre.alissa.numberplace.K;
 import com.gmail.at.sabre.alissa.numberplace.R;
 import com.gmail.at.sabre.alissa.numberplace.capture.CaptureActivity;
@@ -8,11 +13,16 @@ import com.gmail.at.sabre.alissa.numberplace.solver.PuzzleSolver;
 import android.os.Bundle;
 import android.os.Handler;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+import android.widget.Button;
 
 public class MainActivity extends Activity {
+	
+	private static final String TAG = "numberplace..MainActivity";
 	
 	private static final int REQ_CAPTURE = 1;
 	
@@ -22,7 +32,9 @@ public class MainActivity extends Activity {
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        Log.i(TAG, "onCreate");
+        
+    	super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         findViewById(R.id.button_capture).setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
@@ -69,6 +81,30 @@ public class MainActivity extends Activity {
 			// I don't know why.  Anyway we need to live with it.
 			onPuzzleCapture(toByteArrayArray(obj));
 		}
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		// This MainActivity doesn't need OpenCV library,
+		// but the initialization may pop up a dialog and
+		// may invoke Google Play App for downloading
+		// OpenCV stuff, so it's better the process to happen
+		// early.
+		Log.i(TAG, "start initializing OpenCV");
+		final Context appContext = this;
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, appContext, new BaseLoaderCallback(appContext) {
+			@Override
+			public void onManagerConnected(int status) {
+				if (status == SUCCESS) {
+					Log.i(TAG, "OpenCV initialization successful");
+				} else {
+					Log.w(TAG, "OpenCV initialization unsuccessful");
+					super.onManagerConnected(status);
+				}
+			}
+		});
 	}
 
 	@Override
