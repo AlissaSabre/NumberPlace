@@ -53,6 +53,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
         super.onCreate(savedInstanceState);
         
         if (USE_MOCK_IMAGE) {
+        	// This is primarily for debugging.
         	try {
 	        	AssetFileDescriptor desc = getApplicationContext().getResources().openRawResourceFd(R.raw.mock_image);
 	        	byte[] mock = new byte[(int)desc.getLength()];

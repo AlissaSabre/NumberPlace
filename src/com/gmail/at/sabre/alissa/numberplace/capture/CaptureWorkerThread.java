@@ -62,13 +62,13 @@ class CaptureWorkerThread extends Thread {
 		
 //		byte[][] puzzle = null;
 		Bitmap puzzle = null;
-		try {
+		// try {
 			if (mBitmap != null) {
 				puzzle = recognize(mBitmap);
 			}
-		} catch (Throwable e) {
-			Log.w(TAG, e.toString());
-		}
+		// } catch (Throwable e) {
+		//	Log.w(TAG, e.toString());
+		//}
 		
 		Callback callback = mCallback;
 		if (callback != null) {
@@ -95,7 +95,7 @@ class CaptureWorkerThread extends Thread {
 //		return puzzle;
 //	}
 
-	private static Bitmap recognize(Bitmap src_bitmap) throws Exception {
+	private static Bitmap recognize(Bitmap src_bitmap) {
 		if (src_bitmap.getConfig() != Config.RGB_565 &&
 			src_bitmap.getConfig() != Config.ARGB_8888) return null;
 		

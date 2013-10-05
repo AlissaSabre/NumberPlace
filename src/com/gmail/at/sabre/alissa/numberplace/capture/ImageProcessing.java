@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
@@ -14,223 +15,186 @@ import org.opencv.imgproc.Imgproc;
 
 public class ImageProcessing {
 	public static byte[][] recognize(Mat source, Mat result) {
-		Mat src, dst, tmp;
-		src = source.clone();
-		dst = new Mat();
+		// Prepare a clean gray scale image of the source for processing.
+		// The source must be in RGBA color format.
+		final Mat gray = new Mat();
+		makeGrayImage(source, gray);
 		
-		Imgproc.GaussianBlur(src, src, new Size(5, 5), 0f, 0f);
+		// Recognize blobs.
+		final List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+		final Mat hierarchy = new Mat();
+		findContours(gray, contours, hierarchy);
 		
-		Imgproc.cvtColor(src, dst, Imgproc.COLOR_RGBA2GRAY);
-		tmp = src; src = dst; dst = tmp; tmp = null;
+		// Find an outer contour of a blob that is most likely 
+		// of the puzzle frame.
+		MatOfPoint frame_contour = chooseFrameContour(gray.size(), contours, hierarchy);
+
+		contours.clear();
+		hierarchy.release();
+
+		// Fit the frame contour to a quadrangle
+		final Point[] frame_quad = QuadrangleFitter.fit(frame_contour);
+
+		// Assuming the fit quadrangle is a good estimation of the
+		// out most border of the puzzle board, and it was a right
+		// square on its original surface, perform a reverse
+		// perspective adjustment to the original gray scale image
+		// to get the right gray image of the puzzle.
+		// Because the quadrangle is only an estimate and the 
+		// puzzle may extends beyond it, we prepare an image
+		// of 11x11 virtual cells and map the puzzle image into
+		// the central 9x9.  We set arbitrarily the size (in pixels)
+		// of the unit virtual cell.
+		final int UNIT = 80;
+		final Mat right = new Mat();
+		adjustPerspective(gray, right, frame_quad, UNIT);
 		
-		int blockSize = (Math.min(src.width(), src.height()) / 16) | 1; // make the blocksize odd so that a block has a center pixel.
-		Imgproc.adaptiveThreshold(src, src, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, blockSize, 2);
 		
-		tmp = src.clone();
-		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-		Mat hierarchy = new Mat(); // will be 1*n*CV_32C4
+		
+		{
+			final Mat tmp = new Mat();
+			Imgproc.cvtColor(right, tmp, Imgproc.COLOR_GRAY2RGBA);
+			Scalar color = new Scalar(255, 0, 0, 255);
+			for (int i = UNIT; i <= UNIT * 10; i += UNIT) {
+				Core.line(tmp, new Point(i, UNIT), new Point(i, UNIT * 10), color);
+				Core.line(tmp, new Point(UNIT, i), new Point(UNIT * 10, i), color);
+			}
+			tmp.copyTo(result);
+			tmp.release();
+		}
+		
+		
+		
+		gray.release();
+		right.release();
+		return null;
+	}
+	
+	/***
+	 * Make a gray scale image from an RGBA image, denoising.
+	 * @param src An RGBA image of type CV_8UC4. 
+	 * @param dst A gray scale image of type CV_8UC1.
+	 */
+	private static void makeGrayImage(Mat src, Mat dst) {
+		final Mat tmp = new Mat();
+		Imgproc.GaussianBlur(src, tmp, new Size(5, 5), 0f, 0f);
+		Imgproc.cvtColor(tmp, dst, Imgproc.COLOR_RGBA2GRAY);
+		tmp.release();
+	}
+	
+	/***
+	 * Perform a blob analysis on the source gray scale image and
+	 * return blob contours information.  This is a wrapper for
+	 * OpenCV Imgproc.findContours().
+	 * @param src A gray scale image for analysis.  This image is not modified.
+	 * @param contours List of contours to be filled upon return.
+	 * @param hierarchy List of hierarchy info to be filled upon return.
+	 */
+	private static void findContours(Mat src, List<MatOfPoint> contours, Mat hierarchy) {
+		// We use adaptive threasholding, because the lighting is often not
+		// uniform on the puzzle picture. (For example, upper right is very
+		// bright and right half is dark.)  The block size is a key to get 
+		// a good binary image.  We use a block size proportional to the
+		// image size, that is expected to be similar size relative to the 
+		// puzzle frame.  The actual constant 16 is chosen by experiments.
+		// (along with the offset constant 2.)
+		final int blockSize = (Math.min(src.width(), src.height()) / 16) | 1; // make the blocksize odd so that a block has a center pixel.
+		final Mat tmp = new Mat();
+		Imgproc.adaptiveThreshold(src, tmp, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, blockSize, 2);
+		
+		// Run analysis.
+		contours.clear();
 		Imgproc.findContours(tmp, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 		tmp.release();
-		tmp = null;
-		
-		// Find blobs that *may* be number place puzzle frame.  I.e., 
+	}
+	
+	/***
+	 * Find a blob that is most likely the number place puzzle frame,
+	 * and return its outer contour.
+	 * @param image_size The size of the image where the contours are on.
+	 * @param contours The list of contours to choose from.
+	 * @param hierarchy The hierarchy info for the contours.
+	 * @return The outer contour of the most likely puzzle frame.
+	 */
+	private static MatOfPoint chooseFrameContour(Size image_size, List<MatOfPoint> contours, Mat hierarchy) {
+		// Find a blob that is most likely the number place puzzle frame.
+		// We use two criteria:
 		// (1) the blob has at least nine and at most 81 holes, and
 		// (2) the blob covers the center of the image.
+		// 
+		// A number place puzzle is shown in a 9x9 (81) bordered cells.
+		// if all the borders are fully recognized as a blob, it has 81
+		// holes.  However, the cells are divided into nine 3x3 blocks,
+		// with major borders divide the blocks and minor borders divide
+		// cells in a block.  Minor borders are thin and in a lighter
+		// color than major borders and/or digits, so parts of minor
+		// borders often disappear or are broken in the binary image.
+		// If all minor borders were ignored, only major borders remain,
+		// and the puzzle frame blob would have nine holes.  That's why
+		// our criteria (1) is "9 to 81".
+		// 
+		// The second criterion is ad hoc.  Since this app is dedicated
+		// for recognizing the number place puzzle, when shooting,
+		// users are expected to _center_  the primary subject, the puzzle.
+		// When a user shoots a page of a puzzle magazine, for example, the
+		// page may show two or more number place puzzles, and the picture
+		// will very likely contain parts of other puzzles.  The
+		// "covers center" criterion effectively eliminates them.
+		// 
 		List<Integer> candidates = new ArrayList<Integer>();
 		int[] hinfo = new int[4];
-		Point center = new Point(source.width() / 2f, source.height() / 2f);
+		Point center = new Point(image_size.width / 2f, image_size.height / 2f);
 		for (int i = 0; i < contours.size(); i++) {
 			hierarchy.get(0, i, hinfo);
+			
 			if (hinfo[3] >= 0) {
 				// this is an internal contour (a contour of a hole) of a blob.
+				// just skip it.
 				continue;
 			}
+			
 			// count how many holes this blob has.
 			int holes = 0;
 			for (int p = hinfo[2]; p >= 0; p = hinfo[0]) {
 				++holes;
 				hierarchy.get(0, p, hinfo);
 			}
+			
+			// with too few or too many holes, reject it.
 			if (holes < 9 || holes > 81) {
 				continue;
 			}
-			// see if it covers the center
-			//if (Imgproc.pointPolygonTest(new MatOfPoint2f(contours.get(i)), center, false) >= 0f) {
+			
+			// see if it covers the center of the original image.
+			// I want to use Imgproc.pointPolygonTest(contours.get(i), center, false),
+			// but it's hard to do so because of the data type discrepancy...
+			// Use of boundingRect is a cheap alternative.
 			if (Imgproc.boundingRect(contours.get(i)).contains(center)) {
 				candidates.add(i);
 			}
 		}
 
 		// If we have no candidates, give up.
-		// If we have two or more candidates, take the first one, praying!
 		if (candidates.size() == 0) return null;
 		
-		// Fit the contour to a quadrangle
-		Point[] quad = fitQuadrangle(contours.get(candidates.get(0)));
-
-		
-		
-		
-		
-		Point[] goal = new Point[] { new Point(80, 80), new Point(800, 80), new Point(800, 800), new Point(80, 800) };
-		Mat pers = Imgproc.getPerspectiveTransform(new MatOfPoint2f(quad), new MatOfPoint2f(goal));
-		dst.release();
-		dst = new Mat(880, 880, source.type());
-		Imgproc.warpPerspective(source, dst, pers, dst.size());
-		Core.rectangle(dst, new Point(80, 80), new Point(800, 800), new Scalar(255, 0, 0, 255));
-		tmp = src; src = dst; dst = tmp; tmp = null;
-
-		
-		
-		
-		src.copyTo(result);
-		src.release();
-		dst.release();
-		
-		return null;
+		// If we have two or more candidates, take the first one, praying!
+		// (We should add more criteria, or should we run the quad-fit for 
+		// remaining candidates and evaluate the fitness.  FIXME!)
+		return contours.get(candidates.get(0));
 	}
 	
-	private static Point[] fitQuadrangle(MatOfPoint contour) {
-		Point[] array = contour.toArray();
-		if (array.length < 4) return null;
-		if (array.length == 4) return array;
-		
-		Point[] result = new Point[4];
-
-		// find the two most distant points in array as p and q.
-		twoDistantPoints(array, result);
-		Point p = result[0];
-		Point q = result[1];
-		
-		// find the most distant point from the line p-q as s.
-		mostDistantPointFromLine(array, p, q, result);
-		Point s = result[0];
-		
-		// find the most distant point from the line p-q at an opposite side of s (against line p-q) as t
-		// NOTE this doesn't work the given contour forms a very flat trapezoid with 
-		// very different lengths parallel edges.  For our purpose, such contour is not important, and
-		// we ignore the case.
-		mostDistantOppositePointFromLine(array, p, q, s, result);
-		Point t = result[0];
-		
-		result[0] = p;
-		result[1] = s;
-		result[2] = q;
-		result[3] = t;
-		
-		// Our caller wants the four corner points are stored in the _right_ order,
-		// that is, upper left, upper right, lower right, then lower left.
-		reorderPoints(result);
-		return result;
+	private static void adjustPerspective(Mat src, Mat dst, Point[] quad, int unit) {
+		Point[] goal = new Point[] {
+				new Point(unit,      unit),
+				new Point(unit * 10, unit),
+				new Point(unit * 10, unit * 10),
+				new Point(unit,      unit * 10)
+		};
+		Mat matrix = Imgproc.getPerspectiveTransform(new MatOfPoint2f(quad), new MatOfPoint2f(goal));
+		Size size = new Size(unit * 11, unit * 11);
+		dst.create(size, src.type());
+		Imgproc.warpPerspective(src, dst, matrix, size, Imgproc.INTER_LINEAR, Imgproc.BORDER_REPLICATE, new Scalar(0,0,0,0));
+		matrix.release();
 	}
 	
-	private static void twoDistantPoints(Point[] array, Point[] result) {
-		Point p = array[0];
-		Point q = p;
-		double d0 = 0;
-		while (true) {
-			double d = 0;
-			for (int i = 0; i < array.length; i++) {
-				double e = dist2(p, array[i]);
-				if (e > d) {
-					q = array[i];
-					d = e;
-				}
-			}
-			Point r = new Point((p.x + q.x) / 2, (p.y + q.y) / 2);
-			d = 0;
-			Point s = p;
-			for (int i = 0; i < array.length; i++) {
-				double e = dist2(r, array[i]);
-				if (e > d) {
-					s = array[i];
-					d = e;
-				}
-			}
-			if (d <= d0) break;
-			d0 = d;
-			p = s;
-		}
-		result[0] = p;
-		result[1] = q;
-	}
-	
-	private static void mostDistantPointFromLine(Point[] array, Point p, Point q, Point[] result) {
-		double a = p.y - q.y;
-		double b = -p.x + q.x;
-		double c = p.x * q.y - p.y * q.x;
-		Point s = p;
-		double d = 0;
-		for (int i = 0; i < array.length; i++) {
-			Point t = array[i];
-			double e = Math.abs(a * t.x + b * t.y + c);
-			if (e > d) {
-				s = t;
-				d = e;
-			}
-		}
-		result[0] = s;
-	}
-	
-	private static void mostDistantOppositePointFromLine(Point[] array, Point p, Point q, Point r, Point[] result) {
-		double a = p.y - q.y;
-		double b = -p.x + q.x;
-		double c = p.x * q.y - p.y * q.x;
-		if (a * r.x + b * r.y + c > 0) {
-			a = -a;
-			b = -b;
-			c = -c;
-		}
-		Point s = p;
-		double d = 0;
-		for (int i = 0; i < array.length; i++) {
-			Point t = array[i];
-			double e = a * t.x + b * t.y + c;
-			if (e > d) {
-				s = t;
-				d = e;
-			}
-		}
-		result[0] = s;
-	}
-
-	private static void reorderPoints(Point[] points) {
-		int w = 0;
-		double d = Double.MAX_VALUE; 
-		for (int i = 0; i < points.length; i++) {
-			Point p = points[i];
-			double e = p.x * p.x + p.y * p.y;
-			if (e < d) {
-				d = e;
-				w = i;
-			}
-		}
-		if (w > 0) {
-			Point[] temp = new Point[w];
-			System.arraycopy(points, 0, temp, 0, w);
-			System.arraycopy(points, w, points, 0, points.length - w);
-			System.arraycopy(temp, 0, points, points.length - w, w);
-		}
-		double x0 = points[0].x - points[1].x;
-		double x1 = points[1].x - points[2].x;
-		double y0 = points[0].y - points[1].y;
-		double y1 = points[1].y - points[2].y;
-		double cross = x0 * y1 - y0 * x1;
-		if (cross < 0) {
-			// Remember that our coordinate system is flipped
-			// (from the standard mathematical planar system)
-			// in that the Y axis grows toward bottom.
-			for (int i = 1, j = points.length - 1; i < j; i++, --j) {
-				Point t = points[i];
-				points[i] = points[j];
-				points[j] = t;
-			}
-		}
-	}
-	
-	private static double dist2(Point p1, Point p2) {
-		final double x = p1.x - p2.x;
-		final double y = p1.y - p2.y;
-		return x * x + y * y;
-	}
 }
