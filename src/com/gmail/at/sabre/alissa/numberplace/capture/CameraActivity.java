@@ -2,11 +2,14 @@ package com.gmail.at.sabre.alissa.numberplace.capture;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.gmail.at.sabre.alissa.numberplace.K;
 import com.gmail.at.sabre.alissa.numberplace.R;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
@@ -38,6 +41,20 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 	
 	private static final int MAX_SIZE = 1024;
 	
+	/***
+	 * List of known focus modes in the order of this app's preferences.
+	 */
+	@SuppressLint("InlinedApi")
+	private static final String[] FOCUS_MODE_PREFERENCES = {
+		Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE,
+		Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO,
+		Camera.Parameters.FOCUS_MODE_EDOF,
+		Camera.Parameters.FOCUS_MODE_MACRO,
+		Camera.Parameters.FOCUS_MODE_AUTO,
+		Camera.Parameters.FOCUS_MODE_FIXED,
+		Camera.Parameters.FOCUS_MODE_INFINITY,
+	};
+
 	private SurfaceHolder mHolder;
 	
 	private SurfaceView mView;
@@ -45,6 +62,8 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 	private Handler mHandler;
 	
 	private Camera mCamera;
+	
+	private boolean mAutoFocusRequired;
 	
 	private CameraThread mThread;
 	
@@ -130,6 +149,29 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		    		mCamera.setParameters(params);
 		    	}
 		    	
+		    	// Take care of focus mode.
+		    	String currentFocusMode = params.getFocusMode(); 
+		    	List<String> supportedFocusModes = params.getSupportedFocusModes();
+		    	int currentModePreference = Arrays.asList(FOCUS_MODE_PREFERENCES).indexOf(currentFocusMode);
+		    	if (currentModePreference >= 0) {
+		    		// We know the current focus mode.  See if
+		    		// the camera supports a more preferred mode.
+		    		for (int i = 0; i < currentModePreference; i++) {
+		    			if (supportedFocusModes.indexOf(FOCUS_MODE_PREFERENCES[i]) >= 0) {
+		    				// Yes it does.  Use this mode.
+		    				currentFocusMode = FOCUS_MODE_PREFERENCES[i];
+		    				params.setFocusMode(currentFocusMode);
+				    		mCamera.setParameters(params);
+		    				break;
+		    			}
+		    		}
+		    	}
+		    	// Record whether the chosen (or default) focus mode requires
+		    	// app issued auto-focus.
+		    	mAutoFocusRequired = 
+		    			currentFocusMode.equals(Camera.Parameters.FOCUS_MODE_AUTO) ||
+		    			currentFocusMode.equals(Camera.Parameters.FOCUS_MODE_MACRO);
+		    	
 				try {
 					mCamera.setPreviewDisplay(holder);
 				} catch (IOException e) {
@@ -154,19 +196,38 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		mView.setOnClickListener(null);
 		final int rotation = getWindowManager().getDefaultDisplay().getRotation();
 
-		mThread.post(new Runnable() {
+		// Yes, the following spagetti of callback is messy.  I know.
+		// What I don't know is how to rewrite it.
+		final Runnable shoot = new Runnable() {
 			public void run() {
 				mCamera.takePicture(null, null, new Camera.PictureCallback() {
 					// This callback is for JPEG, by the way.
 					public void onPictureTaken(final byte[] data, Camera camera) {
 						final byte[] copy = (byte[])data.clone();
 						mHandler.post(new Runnable() {
-							public void run () {
+							public void run() {
 								camera_onPictureTaken(copy, rotation);
 							}
 						});
 					}
 				});
+			}
+		};
+		mThread.post(new Runnable() {
+			public void run() {
+				// I've heard a rumor that in some device, invoking Camera.autoFocus
+				// when not in MACRO/AUTO focus mode throws an Exception, though it is
+				// contrary to the Android API document.  We can't simply call it
+				// always.
+				if (mAutoFocusRequired) {
+					mCamera.autoFocus(new Camera.AutoFocusCallback() {
+						public void onAutoFocus(boolean success, Camera camera) {
+							mThread.post(shoot);
+						}
+					});
+				} else {
+					mThread.post(shoot);
+				}
 			}
 		});
 	}
@@ -185,6 +246,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		mThread.post(new Runnable() {
 			public void run() {
 				mCamera.stopPreview();
+				mCamera.cancelAutoFocus();
 				mCamera.release();
 				mCamera = null;
 				

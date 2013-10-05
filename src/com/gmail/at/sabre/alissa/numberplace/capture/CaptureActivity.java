@@ -1,10 +1,5 @@
 package com.gmail.at.sabre.alissa.numberplace.capture;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.OpenCVLoader;
 
@@ -16,22 +11,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.graphics.Rect;
-import android.hardware.Camera;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 
 /**
@@ -64,31 +49,6 @@ public class CaptureActivity extends Activity {
 			}
 		});
 
-        //findViewById(R.id.busy).setVisibility(View.INVISIBLE);
-        
-//        File dir = getApplicationContext().getCacheDir();
-//        File dir = getApplicationContext().getExternalCacheDir();
-//        boolean e1 = dir.exists();
-//        String filename = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".jpg";
-//        File file = new File(dir, filename);
-//        try {
-//	        if (!file.exists()) {
-//	        	file.createNewFile();
-//	        }
-//        } catch (IOException e) {
-//        	finish(); // XXX
-//        }
-        
-//        File dir = getApplicationContext().getDir("tmpimg", Context.MODE_WORLD_READABLE | Context.MODE_WORLD_WRITEABLE);
-//        String filename = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".jpg";
-//        File file = new File(dir, filename);
-        
-        	
-//        Intent request = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//        request.setData(Uri.fromFile(file));
-//        request.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-//        request.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-//        request.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(file));
         Intent request = new Intent(getApplicationContext(), CameraActivity.class);
         startActivityForResult(request, REQ_CAMERA);
     }
