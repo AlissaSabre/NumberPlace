@@ -15,6 +15,10 @@ import org.opencv.imgproc.Imgproc;
 
 public class ImageProcessing {
 	public static byte[][] recognize(Mat source, Mat result) {
+		// A default image used in case of an error.
+		// this is a small, random image (consisting of uninitialized native memory.)
+		result.create(32, 32, CvType.CV_8UC1);
+		
 		// Prepare a clean gray scale image of the source for processing.
 		// The source must be in RGBA color format.
 		final Mat gray = new Mat();
@@ -28,7 +32,8 @@ public class ImageProcessing {
 		// Find an outer contour of a blob that is most likely 
 		// of the puzzle frame.
 		MatOfPoint frame_contour = chooseFrameContour(gray.size(), contours, hierarchy);
-
+		if (frame_contour == null) return null;
+		
 		contours.clear();
 		hierarchy.release();
 
