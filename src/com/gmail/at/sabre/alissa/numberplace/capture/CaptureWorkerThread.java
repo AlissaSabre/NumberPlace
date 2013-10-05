@@ -2,12 +2,8 @@ package com.gmail.at.sabre.alissa.numberplace.capture;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
-
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
-import android.util.Log;
 
 class CaptureWorkerThread extends Thread {
 	
