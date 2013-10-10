@@ -229,7 +229,7 @@ public class ImageProcessing {
 					points.release();
 					
 					if (rect.width >= unit || rect.height >= unit) continue;
-					if (rect.width < unit / 3 || rect.height < unit / 3) continue;
+					if (rect.height < unit / 3) continue; // width of a digit '1' is often less than a third 
 					
 					final int midX = rect.x + rect.width / 2;
 					final int midY = rect.y + rect.height / 2;
