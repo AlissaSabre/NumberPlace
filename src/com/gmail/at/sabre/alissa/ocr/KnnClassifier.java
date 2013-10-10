@@ -7,7 +7,6 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfFloat;
 import org.opencv.ml.CvKNearest;
 
 /***
@@ -24,7 +23,7 @@ public class KnnClassifier extends ClassifierBase {
 	
 	@Override
 	public int classify(byte[] feature) {
-		final Mat featureMat = matFromFeatures(feature);
+		final Mat featureMat = OpenCVUtils.matFromFeatures(feature);
 		final Mat resultsMat = new Mat();
 		final Mat responsesMat = new Mat();
 		final Mat distancesMat = new Mat();
@@ -52,8 +51,8 @@ public class KnnClassifier extends ClassifierBase {
 			
 			mK = ois.readInt();
 			
-			final Mat featuresMat  = matFromFeatures( (byte[][])ois.readObject());
-			final Mat responsesMat = matFromResponses((int[])   ois.readObject());
+			final Mat featuresMat  = OpenCVUtils.matFromFeatures( (byte[][])ois.readObject());
+			final Mat responsesMat = OpenCVUtils.matFromResponses((int[])   ois.readObject());
 			
 			// Don't close ois so that the underlying istream is live.
 			
@@ -64,26 +63,6 @@ public class KnnClassifier extends ClassifierBase {
 		}
 	}
 	
-	private static Mat matFromFeatures(byte[]... features) {
-		final int vec_length = features[0].length;
-		final float[] data = new float[features.length * vec_length];
-		for (int i = 0, p = 0; i < features.length; i++, p += vec_length) {
-			final byte[] vector = features[i];
-			for (int j = 0; j < vec_length; j++) {
-				data[p + j] = vector[j] & 255; // consider a byte value in feature vector as 0..255.
-			}
-		}
-		return new MatOfFloat(data).reshape(1, features.length);
-	}
-	
-	private static Mat matFromResponses(int[] responses) {
-		final float[] data = new float[responses.length];
-		for (int i = 0; i < responses.length; i++) {
-			data[i] = responses[i];
-		}
-		return new MatOfFloat(data).reshape(1, responses.length);
-	}
-
 	@Override
 	public Learner getLearner() {
 		return new KnnLearner();
@@ -116,8 +95,8 @@ public class KnnClassifier extends ClassifierBase {
 			for (int i = 0; i < trainData.length; i++) mTrainData[i] = trainData[i].clone();
 			mResponses = responses.clone();
 			
-			final Mat trainDataMat = matFromFeatures(trainData);
-			final Mat responsesMat = matFromResponses(responses);
+			final Mat trainDataMat = OpenCVUtils.matFromFeatures(trainData);
+			final Mat responsesMat = OpenCVUtils.matFromResponses(responses);
 			mEngine.train(trainDataMat, responsesMat);
 		}
 

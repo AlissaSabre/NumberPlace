@@ -21,10 +21,10 @@ public class Ocr {
 	private static final int MAGIC = 0xfe69d6fd;
 	
 	public static class Params {
-		final public int mThumbWidth;
-		final int mThumbHeight;
-		final boolean mUseHist;
-		final String mClassifier;
+		public final int mThumbWidth;
+		public final int mThumbHeight;
+		public final boolean mUseHist;
+		public final String mClassifier;
 		
 		public Params(int width, int height, boolean useHist, String classifier) {
 			mThumbWidth = width;

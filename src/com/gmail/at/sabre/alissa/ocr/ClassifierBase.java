@@ -34,6 +34,7 @@ public abstract class ClassifierBase implements Classifier {
 			if (n < 0) break;
 			ostream.write(buffer, 0, n);
 		}
+		ostream.flush();
 	}
 
 	public void load(final InputStream istream) throws IOException {

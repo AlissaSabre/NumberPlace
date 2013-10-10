@@ -16,8 +16,12 @@ import java.io.OutputStream;
  * <p>
  * The responses (class id's) are represented by an integer value.
  * The values are considered discrete.  (I.e., no interpolation
- * or regression.)  Implementation may limit the minimum and maximum
- * values of a response, e.g., -0x00FFFFFF .. 0x00FFFFFF. 
+ * or regression.)  The minimum acceptable value is 0.  Since this
+ * is a classifier, and a response is an id, dense allocation of
+ * possible response values is better.  If you need n classes, 
+ * it's best to use 0 .. n-1.
+ * Implementation will also limit the maximum values of a response, 
+ * e.g., 0x00FFFFFF. 
  * 
  * @author alissa
  */
