@@ -1,9 +1,9 @@
 package com.gmail.at.sabre.alissa.numberplace.editor;
 
-import com.gmail.at.sabre.alissa.numberplace.R;
-
-import android.os.Bundle;
 import android.app.Activity;
+import android.os.Bundle;
+
+import com.gmail.at.sabre.alissa.numberplace.R;
 
 public class AboutActivity extends Activity {
 

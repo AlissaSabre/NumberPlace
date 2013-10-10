@@ -9,12 +9,15 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import com.gmail.at.sabre.alissa.ocr.Ocr;
+
 public class ImageProcessing {
-	public static byte[][] recognize(Mat source, Mat result) {
+	public static boolean recognize(Ocr ocr, Mat source, Mat result, byte[][] puzzle) {
 		// A default image used in case of an error.
 		// this is a small, random image (consisting of uninitialized native memory.)
 		result.create(32, 32, CvType.CV_8UC1);
@@ -32,7 +35,7 @@ public class ImageProcessing {
 		// Find an outer contour of a blob that is most likely 
 		// of the puzzle frame.
 		MatOfPoint frame_contour = chooseFrameContour(gray.size(), contours, hierarchy);
-		if (frame_contour == null) return null;
+		if (frame_contour == null) return false;
 		
 		contours.clear();
 		hierarchy.release();
@@ -54,7 +57,8 @@ public class ImageProcessing {
 		final Mat right = new Mat();
 		adjustPerspective(gray, right, frame_quad, UNIT);
 		
-		
+		// Recognize fixed digits.
+		recognizeDigits(right, UNIT, ocr, puzzle);
 		
 		{
 			final Mat tmp = new Mat();
@@ -68,11 +72,10 @@ public class ImageProcessing {
 			tmp.release();
 		}
 		
-		
-		
 		gray.release();
 		right.release();
-		return null;
+		
+		return true;
 	}
 	
 	/***
@@ -202,4 +205,59 @@ public class ImageProcessing {
 		matrix.release();
 	}
 	
+	private static void recognizeDigits(Mat src, int unit, Ocr ocr, byte[][] puzzle) {
+		final Mat tmp = new Mat(unit * 2, unit * 2, CvType.CV_8UC1);
+		for (int y = 0; y < 9; y++) {
+			for (int x = 0; x < 9; x++) {
+				final Rect window = new Rect(x * unit + unit / 2, y * unit + unit / 2, unit * 2, unit * 2);
+				final Mat srcWindow = src.submat(window);
+				Imgproc.threshold(srcWindow, tmp, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
+				
+				final List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+				final Mat hierarchy = new Mat();
+				Imgproc.findContours(tmp, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+				
+				double maxArea = 0;
+				Rect maxRect = null;
+				final int[] hinfo = new int[4];
+				for (int i = 0; i < contours.size(); i++) {
+					hierarchy.get(0, i, hinfo);
+					if (hinfo[3] >= 0) continue;
+					
+					final MatOfPoint points = contours.get(i);
+					final Rect rect = Imgproc.boundingRect(points);
+					points.release();
+					
+					if (rect.width >= unit || rect.height >= unit) continue;
+					if (rect.width < unit / 3 || rect.height < unit / 3) continue;
+					
+					final int midX = rect.x + rect.width / 2;
+					final int midY = rect.y + rect.height / 2;
+					if (midX <= unit / 2 || midX >= unit + unit / 2 ||
+						midY <= unit / 2 || midY >= unit + unit / 2) continue;
+					
+					double area = rect.area();
+					if (area > maxArea) {
+						maxArea = area;
+						maxRect = rect;
+					}
+				}
+				
+				contours.clear();
+				hierarchy.release();
+				
+				if (maxRect != null) {
+					Imgproc.threshold(srcWindow, tmp, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
+					final Mat tmpChar = tmp.submat(maxRect);
+					puzzle[y][x] = Byte.parseByte(ocr.recognize(tmpChar));
+					tmpChar.release();
+				}
+				
+				srcWindow.release();
+			}
+		}
+		tmp.release();
+	}
+
+
 }

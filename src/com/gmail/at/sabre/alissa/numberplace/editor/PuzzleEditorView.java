@@ -1,11 +1,9 @@
 package com.gmail.at.sabre.alissa.numberplace.editor;
 
-import com.gmail.at.sabre.alissa.numberplace.R;
-
 import android.content.Context;
 import android.content.res.Resources;
-import android.content.res.TypedArray;
 import android.content.res.Resources.NotFoundException;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -18,6 +16,8 @@ import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+
+import com.gmail.at.sabre.alissa.numberplace.R;
 
 /**
  * TODO: document your custom view class.

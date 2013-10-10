@@ -1,10 +1,10 @@
 package com.gmail.at.sabre.alissa.numberplace.capture;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.OpenCVLoader;
-
-import com.gmail.at.sabre.alissa.numberplace.K;
-import com.gmail.at.sabre.alissa.numberplace.R;
 
 import android.app.Activity;
 import android.content.Context;
@@ -18,6 +18,10 @@ import android.view.Surface;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.gmail.at.sabre.alissa.numberplace.K;
+import com.gmail.at.sabre.alissa.numberplace.R;
+import com.gmail.at.sabre.alissa.ocr.Ocr;
 
 /**
  * @author alissa
@@ -43,14 +47,28 @@ public class CaptureActivity extends Activity {
         mHandler = new Handler();
         
         mThread = new CaptureWorkerThread();
+        mThread.setOcr(prepareOcr());
         mThread.setCallback(new CaptureWorkerThread.Callback() {
 			public void onPuzzleRecognized(byte[][] puzzle, Bitmap bitmap) {
-				thread_onPuzzleSolved(puzzle, bitmap);
+				thread_onPuzzleRecognized(puzzle, bitmap);
 			}
 		});
 
         Intent request = new Intent(getApplicationContext(), CameraActivity.class);
         startActivityForResult(request, REQ_CAMERA);
+    }
+    
+    private Ocr prepareOcr() {
+    	try {
+    		final InputStream is = getApplicationContext().getResources().openRawResource(R.raw.ocr_data);
+    		try {
+    			return new Ocr(is);
+    		} finally {
+    			is.close();
+    		}
+    	} catch (IOException e) {
+    		throw new RuntimeException(e);
+    	}
     }
 
 	@Override
@@ -94,7 +112,7 @@ public class CaptureActivity extends Activity {
 		});
 	}
 
-	private void thread_onPuzzleSolved(final byte[][] puzzle, final Bitmap bitmap) {
+	private void thread_onPuzzleRecognized(final byte[][] puzzle, final Bitmap bitmap) {
 		if (bitmap != null) {
 			mHandler.post(new Runnable() {
 				public void run() {

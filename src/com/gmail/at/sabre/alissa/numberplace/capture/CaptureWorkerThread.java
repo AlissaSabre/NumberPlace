@@ -2,8 +2,11 @@ package com.gmail.at.sabre.alissa.numberplace.capture;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+
+import com.gmail.at.sabre.alissa.ocr.Ocr;
 
 class CaptureWorkerThread extends Thread {
 	
@@ -14,6 +17,8 @@ class CaptureWorkerThread extends Thread {
 	}
 	
 	private Callback mCallback = null;
+	
+	private Ocr mOcr = null;
 	
 	private Bitmap mBitmap = null;
 	
@@ -29,6 +34,10 @@ class CaptureWorkerThread extends Thread {
 		if (getState() == State.NEW) {
 			start();
 		}
+	}
+	
+	public void setOcr(Ocr ocr) {
+		mOcr = ocr;
 	}
 	
 	public void setBitmap(Bitmap bitmap) {
@@ -56,18 +65,17 @@ class CaptureWorkerThread extends Thread {
 			return; // XXX
 		}
 		
-		Bitmap puzzle = null;
-		// try {
-			if (mBitmap != null) {
-				puzzle = recognize(mBitmap);
-			}
-		// } catch (Throwable e) {
-		//	Log.w(TAG, e.toString());
-		//}
+		Bitmap captured = null;
+		byte[][] puzzle = null;
+		if (mBitmap != null) {
+			puzzle = new byte[9][9];
+			captured = recognize(mOcr, mBitmap, puzzle);
+			if (captured == null) puzzle = null;
+		}
 		
 		Callback callback = mCallback;
 		if (callback != null) {
-			callback.onPuzzleRecognized(null, puzzle);
+			callback.onPuzzleRecognized(puzzle, captured);
 		}
 	}
 	
@@ -90,18 +98,21 @@ class CaptureWorkerThread extends Thread {
 //		return puzzle;
 //	}
 
-	private static Bitmap recognize(Bitmap src_bitmap) {
+	private static Bitmap recognize(Ocr ocr, Bitmap src_bitmap, byte[][] puzzle) {
 		if (src_bitmap.getConfig() != Config.RGB_565 &&
 			src_bitmap.getConfig() != Config.ARGB_8888) return null;
 		
-		Mat src = new Mat();
+		final Mat src = new Mat();
 		Utils.bitmapToMat(src_bitmap, src);
 		
-		Mat dst = new Mat();
-		ImageProcessing.recognize(src, dst);
+		final Mat dst = new Mat();
+		final boolean success = ImageProcessing.recognize(ocr, src, dst, puzzle);
 		
-		Bitmap dst_bitmap = Bitmap.createBitmap(dst.width(), dst.height(), Config.ARGB_8888);
-		Utils.matToBitmap(dst, dst_bitmap);
+		Bitmap dst_bitmap = null;
+		if (success) {
+			dst_bitmap = Bitmap.createBitmap(dst.width(), dst.height(), Config.ARGB_8888);
+			Utils.matToBitmap(dst, dst_bitmap);
+		}
 		
 		src.release();
 		dst.release();

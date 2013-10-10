@@ -1,24 +1,21 @@
 package com.gmail.at.sabre.alissa.numberplace.editor;
 
 import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.InstallCallbackInterface;
-import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
 import com.gmail.at.sabre.alissa.numberplace.K;
 import com.gmail.at.sabre.alissa.numberplace.R;
 import com.gmail.at.sabre.alissa.numberplace.capture.CaptureActivity;
 import com.gmail.at.sabre.alissa.numberplace.solver.PuzzleSolver;
-
-import android.os.Bundle;
-import android.os.Handler;
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
-import android.view.View;
-import android.widget.Toast;
-import android.widget.Button;
 
 public class MainActivity extends Activity {
 	

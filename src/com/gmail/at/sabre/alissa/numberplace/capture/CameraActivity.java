@@ -1,17 +1,12 @@
 package com.gmail.at.sabre.alissa.numberplace.capture;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import com.gmail.at.sabre.alissa.numberplace.K;
-import com.gmail.at.sabre.alissa.numberplace.R;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.res.AssetFileDescriptor;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,6 +14,8 @@ import android.os.HandlerThread;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+
+import com.gmail.at.sabre.alissa.numberplace.K;
 
 /***
  * 
@@ -30,8 +27,6 @@ import android.view.View;
  *
  */
 public class CameraActivity extends Activity implements SurfaceHolder.Callback, View.OnClickListener {
-	
-	private boolean USE_MOCK_IMAGE = false;
 	
 	private static final int MAX_SIZE = 1024;
 	
@@ -64,20 +59,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        if (USE_MOCK_IMAGE) {
-        	// This is primarily for debugging.
-        	try {
-	        	AssetFileDescriptor desc = getApplicationContext().getResources().openRawResourceFd(R.raw.mock_image);
-	        	byte[] mock = new byte[(int)desc.getLength()];
-	        	FileInputStream is = desc.createInputStream();
-	        	if (mock.length != is.read(mock)) throw new IOException();
-	        	is.close();
-	        	camera_onPictureTaken(mock, 1);
-        	} catch (Exception e) {
-        		// fall through normal processing.
-        	}
-        }
         
         mView = new SurfaceView(getApplicationContext());
         setContentView(mView);
