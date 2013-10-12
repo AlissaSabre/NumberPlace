@@ -189,7 +189,18 @@ public class ImageProcessing {
 				Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV,
 				blockSize, 2);
 
-		// Analyze blob shapes.
+		// Analyze blob shapes.  We use one of the detected contours 
+		// (the outer contour of the puzzle board) to fit several 
+		// lines to.  The fitting is by least squares.  For the best
+		// fitting, we need all points in the contour, so the last 
+		// parameter to the following findCOntours should be 
+		// CHAIN_APROX_NONE.  However, the following call usually 
+		// return a lot of contours, say 500-600, and large contour
+		// contain thousands of points, if we don't approximate.
+		// Experiments showed that the differences of the line 
+		// fitting to a contour of CHAIN_APPROX_NONE and 
+		// CHAIN_APPROX_SIMPLE was very small, and I decided to use
+		// CHAIN_APPROX_SIMPLE here.
 		Imgproc.findContours(tmp, contours, hierarchy,
 				Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 		tmp.release();

@@ -1,18 +1,21 @@
 package com.gmail.at.sabre.alissa.numberplace.capture;
 
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
+import org.opencv.imgproc.Imgproc;
 
 /***
- * Provides a static method to fit a set of points to a quadrangle.
+ * Provides a static method to fit a contour to a quadrangle.
  * @author alissa
  */
 public abstract class QuadrangleFitter {
 	
 	/***
-	 * Find a quadrangle that the given set of points are close to its
-	 * edges.  The method works for 2D points (as opposed to 3D
-	 * points.)
+	 * Find a quadrangle that the given contour (a series of points)
+	 * are close to its edges.  The method works for 2D points (as
+	 * opposed to 3D points.)
 	 * 
 	 * @param contour
 	 *             A set of points, as returned by
@@ -23,10 +26,20 @@ public abstract class QuadrangleFitter {
 	 */
 	public static final Point[] fit(MatOfPoint contour) {
 
+		// This method works as follows: (1) Analyze the locations of
+		// the points in contour and find four points in contour that
+		// are most appropriate for the four corner point of a
+		// quadrangle. (2) Divide the contour into four groups of
+		// points that are between two corner points detected in the
+		// first step. (3) Use OpenCV line fitting algorithm on each
+		// group of points to find a fit line.  It gives us four
+		// lines.  (4) Build a fit quadrangle by calculating the
+		// crossing points of two adjacent lines.
+
 		final Point[] array = contour.toArray();
 		if (array.length < 4) throw new IllegalArgumentException("Four or more points are needed.");
 
-		// Find the two most distant points in the set.  We
+		// Find the two most distant points in the contour.  We
 		// tentatively assume the two points are a diagonal pair of
 		// corners of the resulting quadrangle
 		final Point[] pair1 = mostDistantPoints(array);
@@ -49,18 +62,33 @@ public abstract class QuadrangleFitter {
 
 		// The following four points from the set (in the order) are
 		// the tentative corners of quadrangle.
-		final Point[] result = new Point[4];
-		result[0] = pair1[0];
-		result[1] = pair2[0];
-		result[2] = pair1[1];
-		result[3] = pair2[1];
+		final Point[] tentativeQuad = new Point[4];
+		tentativeQuad[0] = pair1[0];
+		tentativeQuad[1] = pair2[0];
+		tentativeQuad[2] = pair1[1];
+		tentativeQuad[3] = pair2[1];
+
+		// Divide the contour into four groups of points, the edges.
+		final Mat[] edges = divideContour(contour, tentativeQuad);
+		
+		// Use OpenCV fitLine function repeatedly to find lines that
+		// fit to each edge.
+		final Mat[] lines = fitLines(edges);
+		
+		// Calculate crossing points of consecutive two lines; they
+		// are the corners of the fit quadrangle.
+		final Point[] quadrangle = calculateCrossingPoint(lines);
+		
+		// Release Mats.
+		for (int i = 0; i < edges.length; i++) edges[i].release();
+		for (int i = 0; i < lines.length; i++) lines[i].release();
 		
 		// The four corner points should be stored in the _right_
 		// order, that is: upper left, upper right, lower right, then
 		// lower left.
-		reorderPoints(result);
-		
-		return result;
+		reorderPoints(quadrangle);
+				
+		return quadrangle;
 	}
 	
 	/***
@@ -102,7 +130,7 @@ public abstract class QuadrangleFitter {
 	 * @param pair
 	 *             A pair of points.  This method works on the line
 	 *             that connects the two points.  This array is not
-	 *             modofied.
+	 *             modified.
 	 * @return
 	 *             An array of length two containing the two points
 	 *             that are most distant from the line on each side.
@@ -152,6 +180,132 @@ public abstract class QuadrangleFitter {
 		}
 
 		return new Point[] { s, t };
+	}
+	
+	/***
+	 * Square of the distance between two points.  The calculation is
+	 * faster than an ordinary distance...
+	 */
+	private static double dist2(Point p1, Point p2) {
+		final double x = p1.x - p2.x;
+		final double y = p1.y - p2.y;
+		return x * x + y * y;
+	}
+	
+	/***
+	 * Divide points in contour into four separate set of points based on the
+	 * tentative quad corners.
+	 * 
+	 * @param contour
+	 *            The contour to divide.
+	 * @param quad
+	 *            Four points in the contour.
+	 * @return
+	 *            An array of four Mat each of which contains points appropriate for an edge of a quadrangle.
+	 */
+	private static Mat[] divideContour(MatOfPoint contour, Point[] quad) {
+
+		final Point[] points = contour.toArray();
+		
+		// Locate quad Points in pints array.
+		final int[] indexes = new int[quad.length];
+		for (int i = 0; i < quad.length; i++) {
+			final Point p = quad[i];
+			for (int j = 0; j < points.length; j++) {
+				if (p.equals(points[j])) {
+					indexes[i] = j;
+					break;
+				}
+			}
+		}
+		
+		// Make the points in quad in the same order as contour.
+		int f = 0;
+		for (int i = 0; i < indexes.length - 1; i++) {
+			if (indexes[i] > indexes[i + 1]) f++;
+		}
+		if (f >= 2) {
+			// quad has points in a reversed order.  flip it.
+			for (int i = 1, j = indexes.length - 1; i < j; i++, --j) {
+				final int t = indexes[i];
+				indexes[i] = indexes[j];
+				indexes[j] = t;
+			}
+		}
+
+		// Extract points between two corner points in quad to form four edges.  A corner point is included in both two adjacent edges. 
+		final Mat[] edges = new Mat[indexes.length]; 
+		for (int i = 0; i < indexes.length; i++) {
+			final int m = indexes[i];
+			final int n = indexes[(i + 1) % indexes.length];
+			if (m < n) {
+				edges[i] = contour.rowRange(m,  n);
+			} else {
+				final Point[] edge = new Point[points.length - m + n + 1];
+				System.arraycopy(points, m, edge, 0, points.length - m);
+				System.arraycopy(points, 0, edge, points.length - m, n + 1);
+				edges[i] = new MatOfPoint(edge);
+			}
+		}
+		
+		return edges;
+	}
+
+	/***
+	 * A wrapper around OpenCV fitLine function.
+	 * 
+	 * @param edges An array of sets of points to fit a line to.
+	 * @return The line parameters as calculated by OpenCV fitLine function.
+	 */
+	private static Mat[] fitLines(Mat[] edges) {
+		final Mat[] lines = new Mat[edges.length];
+		for (int i = 0; i < edges.length; i++) {
+			final Mat line = new Mat();
+			Imgproc.fitLine(edges[i], line, Imgproc.CV_DIST_L2, 0, 0.01, 0.01);
+			lines[i] = line;
+		}
+		return lines;
+	}
+
+	private static Point[] calculateCrossingPoint(Mat[] lines) {
+		
+		// Extract the array parameters out of Mats.
+		final float[][] linesArray = new float[lines.length][4];
+		for (int i = 0; i < lines.length; i++) {
+			final MatOfFloat line = new MatOfFloat(lines[i]);
+			linesArray[i] = line.toArray();
+			line.release();
+		}
+		
+		final Point[] points = new Point[linesArray.length];
+		for (int i = 0; i < linesArray.length; i++) {
+
+			// Calculate the crossing point of the i'th line and
+			// i+1'th line.  In the following expressions, one for s
+			// is the key.  It is the solution of a formula
+			// representing a crossing point.
+
+			final float[] l1 = linesArray[i];
+			final float[] l2 = linesArray[(i + 1) % linesArray.length];
+			
+			final double px = l1[0];
+			final double py = l1[1];
+			final double ax = l1[2];
+			final double ay = l1[3];
+			final double qx = l2[0];
+			final double qy = l2[1];
+			final double bx = l2[2];
+			final double by = l2[3];
+			
+			final double s = (qy * (bx - ax) - qx * (by - ay)) / (px * qy - qx * py);
+			
+			final double rx = s * px + ax;
+			final double ry = s * py + ay;
+			
+			points[i] = new Point(rx, ry);
+		}
+		
+		return points;
 	}
 
 	/***
@@ -206,14 +360,4 @@ public abstract class QuadrangleFitter {
 		}
 	}
 	
-	/***
-	 * Square of the distance of two points.  The calculation is
-	 * faster than an ordinary distance...
-	 */
-	private static double dist2(Point p1, Point p2) {
-		final double x = p1.x - p2.x;
-		final double y = p1.y - p2.y;
-		return x * x + y * y;
-	}
-
 }
