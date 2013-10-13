@@ -14,8 +14,10 @@ import android.os.HandlerThread;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.gmail.at.sabre.alissa.numberplace.K;
+import com.gmail.at.sabre.alissa.numberplace.R;
 
 /***
  * An activity that use a camera to take a picture. This is similar to a camera
@@ -77,6 +79,8 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
 	private SurfaceView mView;
 
+	private View mContentView;
+
 	private Handler mHandler;
 
 	private Camera mCamera;
@@ -93,9 +97,10 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_camera);
 
-        mView = new SurfaceView(getApplicationContext());
-        setContentView(mView);
+        mView = (SurfaceView)findViewById(R.id.surfaceView);
+        mContentView = findViewById(R.id.content_view);
 
         mHolder = mView.getHolder();
         mHolder.addCallback(this);
@@ -195,10 +200,35 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 					// TODO: this event should be notified to user, too.
 					throw new RuntimeException("Can't preview camera", e);
 				}
+
+				// Resize the surface view to have the same aspect ratio as the camera preview.
+				final int pw = preview.width;
+				final int ph = preview.height;
+				mHandler.post(new Runnable() {
+					public void run() {
+						final int vw = mView.getWidth();
+						final int vh = mView.getHeight();
+						final int nw, nh;
+						if ((float)pw / ph > (float)vw / vh) {
+							nw = vw;
+							nh = vw * ph / pw;
+						} else {
+							nw = vh * pw / ph;
+							nh = vh;
+						}
+						if (Math.abs(vw - nw) > 1 || Math.abs(vh - nh) > 1) {
+							ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
+					        layoutParams.width = nw;
+						    layoutParams.height = nh;
+						    mView.setLayoutParams(layoutParams);
+						}
+					}
+				});
 			}
 		});
 
-        mView.setOnClickListener(this);
+
+		mContentView.setOnClickListener(this);
 	}
 
 	public void surfaceChanged(final SurfaceHolder holder, final int format, final int width, final int height) {
