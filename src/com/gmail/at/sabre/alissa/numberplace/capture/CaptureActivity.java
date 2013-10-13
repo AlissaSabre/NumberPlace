@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -55,11 +56,17 @@ public class CaptureActivity extends Activity {
         // It is a waste of CPU power and battery life.
 		// FIXME!
 
-		final byte[] bytes = getIntent().getByteArrayExtra(K.EXTRA_IMAGE_DATA);
-		final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-		((ImageView)findViewById(R.id.imageView)).setImageBitmap(bitmap);
+		int rotation = calculateBitmapRotation(getIntent().getIntExtra(K.EXTRA_DEVICE_ROTATION, -1));
+		if (rotation < 0) rotation = 0;
 
-		final int camera_rotation = getIntent().getIntExtra(K.EXTRA_DEVICE_ROTATION, -1);
+		final byte[] bytes = getIntent().getByteArrayExtra(K.EXTRA_IMAGE_DATA);
+		Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+		if (rotation != 0) {
+			final Matrix m = new Matrix();
+			m.setRotate(rotation);
+			bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, false);
+		}
+		((ImageView)findViewById(R.id.imageView)).setImageBitmap(bitmap);
 
 		mThread = new CaptureWorkerThread();
         mThread.setOcr(prepareOcr());
@@ -69,11 +76,6 @@ public class CaptureActivity extends Activity {
 				thread_onPuzzleRecognized(puzzle, bitmap);
 			}
 		});
-
-		final int bitmapRotation = calculateBitmapRotation(camera_rotation);
-		if (bitmapRotation >= 0) {
-			mThread.setBitmapRotationHint(bitmapRotation);
-		}
     }
 
     private Ocr prepareOcr() {
@@ -91,7 +93,7 @@ public class CaptureActivity extends Activity {
 
     /***
      * Calculate how much the bitmap image data is rotated from the real orientation.
-     * The rotation is measured counterclockwise in degrees with 90 degree steps.
+     * The rotation is measured clockwise in degrees with 90 degree steps.
      *
      * @param camera_rotation
      * @return

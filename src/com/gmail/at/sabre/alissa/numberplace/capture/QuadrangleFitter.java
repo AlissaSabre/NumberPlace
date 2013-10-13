@@ -87,6 +87,7 @@ public abstract class QuadrangleFitter {
 		// order, that is: upper left, upper right, lower right, then
 		// lower left.
 		reorderPoints(quadrangle);
+		adjustOrientation(quadrangle);
 
 		return quadrangle;
 	}
@@ -359,27 +360,15 @@ public abstract class QuadrangleFitter {
 		}
 	}
 
-	public static void adjustOrientation(int expected_rotation, Point[] points) {
+	private static void adjustOrientation(Point[] points) {
 
-		// Find a point that is at the most upper left position.
-		// _Most_upper_left_ point is a point that is most close to a
-		// line y == x if the expected rotation is zero.  What we
-		// actually do is not measuring the distance to the line y ==
-		// x but choosing a point whose x coordinate value is minimum
-		// after rotating the points around the origin 45 degree
-		// counterclockwise.  When rotating, we consider the expected
-		// rotation.  Be careful that our coordinate system is flipped
-		// from the standard mathematical coordinate system in that
-		// the Y axis increases toward bottom.  Got the idea?  OK.
-		// The code follows:
-		final double a = Math.cos((45 - expected_rotation) / (Math.PI * 2));
-		final double b = Math.sin((45 - expected_rotation) / (Math.PI * 2));
+		// Find a point that is most upper left.
 		double min = Double.MAX_VALUE;
 		int w = 0;
 		for (int i = 0; i < points.length; i++) {
-			final double x = a * points[i].x + b * points[i].y;
-			if (x < min) {
-				min = x;
+			final double d = points[i].x + points[i].y;
+			if (d < min) {
+				min = d;
 				w = i;
 			}
 		}

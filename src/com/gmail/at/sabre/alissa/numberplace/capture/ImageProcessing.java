@@ -48,19 +48,16 @@ public class ImageProcessing {
 	 *            An empty Mat object to receive an image data showing a
 	 *            detected puzzle board. It is primarily for debugging. Set to
 	 *            null if you don't want to receive it.
-	 * @param rotation_hint
-	 *            A hint on how much the puzzle board is rotated. Measured
-	 *            counterclockwise in degrees from the top.
 	 * @param puzzle
 	 *            A nine by nine array to receive the recognized puzzle.
 	 * @return True if a puzzle is successfully recognized.
 	 */
-	public static boolean recognize(Ocr ocr, Mat source, Mat result, int rotation_hint, byte[][] puzzle) {
+	public static boolean recognize(Ocr ocr, Mat source, Mat result, byte[][] puzzle) {
 
 		// Recognize the puzzle board and get a right-fit image of the
 		// board.
 		Mat right = new Mat();
-		boolean ok = recognizeBoard(source, rotation_hint, right);
+		boolean ok = recognizeBoard(source, right);
 
 		// Recognize fixed digits on the board.  We rely on the grid
 		// inferred by the puzzle frame to locate the digits.
@@ -87,14 +84,11 @@ public class ImageProcessing {
 	 * @param source
 	 *            The source image containing a puzzle board. It is not
 	 *            modified.
-	 * @param rotation_hint
-	 *            A hint on how much the puzzle board is rotated. Measured
-	 *            counterclockwise in degrees from the top.
 	 * @param right
 	 *            A Mat object to receive the right image of the puzzle board.
 	 * @return True if a board is successfully recognized.
 	 */
-	private static boolean recognizeBoard(Mat source, int rotation_hint, Mat right) {
+	private static boolean recognizeBoard(Mat source, Mat right) {
 
 		// Prepare a clean gray scale image of the source for
 		// processing.
@@ -118,9 +112,6 @@ public class ImageProcessing {
 		final Point[] quad = QuadrangleFitter.fit(frame_contour);
 
 		frame_contour.release();
-
-		// Find and ajust the
-		QuadrangleFitter.adjustOrientation(rotation_hint, quad);
 
 		// The puzzle in a photo is often on a surface that is not
 		// parallel to the camera's lens plane, and the puzzle image
