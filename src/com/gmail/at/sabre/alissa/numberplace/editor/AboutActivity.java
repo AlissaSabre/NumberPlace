@@ -5,6 +5,12 @@ import android.os.Bundle;
 
 import com.gmail.at.sabre.alissa.numberplace.R;
 
+/***
+ * Shows some information about this app.
+ *
+ * @author alissa
+ *
+ */
 public class AboutActivity extends Activity {
 
     @Override

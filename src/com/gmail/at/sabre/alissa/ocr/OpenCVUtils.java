@@ -3,8 +3,14 @@ package com.gmail.at.sabre.alissa.ocr;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 
-public class OpenCVUtils {
-	
+/***
+ * Provides several bridging methods to help implementing {@link Classifier}
+ * using OpenCV's ML functions.
+ *
+ * @author alissa
+ */
+class OpenCVUtils {
+
 	public static Mat matFromFeatures(byte[]... features) {
 		final int vec_length = features[0].length;
 		final float[] data = new float[features.length * vec_length];
@@ -16,7 +22,7 @@ public class OpenCVUtils {
 		}
 		return new MatOfFloat(data).reshape(1, features.length);
 	}
-	
+
 	public static Mat matFromResponses(int[] responses) {
 		final float[] data = new float[responses.length];
 		for (int i = 0; i < responses.length; i++) {
@@ -31,12 +37,12 @@ public class OpenCVUtils {
 			if (responses[i] > max) max = responses[i];
 		}
 		final int width = max + 1;
-		
-		final float[] data = new float[responses.length * width]; // filled by 0f.
+
+		final float[] data = new float[responses.length * width]; // filled with 0f.
 		for (int i = 0, p = 0; i < responses.length; i++, p += width) {
 			data[p + responses[i]] = 1f;
 		}
-		
+
 		return new MatOfFloat(data).reshape(1, responses.length);
 	}
 }

@@ -16,9 +16,9 @@ import org.opencv.imgproc.Imgproc;
 import com.gmail.at.sabre.alissa.ocr.Ocr;
 
 /***
- * Provides a series of static methods for number place puzzle board 
+ * Provides a series of static methods for number place puzzle board
  * recognition.
- * 
+ *
  * @author alissa
  */
 public class ImageProcessing {
@@ -26,38 +26,35 @@ public class ImageProcessing {
 	/***
 	 * Length in pixels of a unit square.
 	 * <p>
-	 * After detecting a puzzle board and before recognizing digits on
-	 * the board, we adjust the image into a <i>right</i> position and
-	 * angle. We prepare a right square grid consisting of 11x11 
-	 * square blocks and fit the puzzle board into the center 9x9 blocks,
-	 * so that a cell of the puzzle board is just on a block.
+	 * After detecting a puzzle board and before recognizing digits on the
+	 * board, we adjust the image into a <i>right</i> position and angle. We
+	 * prepare a right square grid consisting of 11x11 square blocks and fit the
+	 * puzzle board into the center 9x9 blocks, so that a cell of the puzzle
+	 * board is just on a block.
 	 */
 	private static final int UNIT = 80;
 
 	/***
-	 * Process the given image data, recognize a number place puzzle
-	 * on it, and return the puzzle data in a format that a solver can
-	 * handle. It uses a separate OCR (optical character recognition)
-	 * engine to recognize digits on the puzzle.
-	 * 
+	 * Process the given image data, recognize a number place puzzle on it, and
+	 * return the puzzle data in a format that a solver can handle. It uses a
+	 * separate OCR (optical character recognition) engine to recognize digits
+	 * on the puzzle.
+	 *
 	 * @param ocr
 	 *            An OCR engine to use when recognizing digits.
 	 * @param source
-	 *            The source image of a number place puzzle.  It is
-	 *            not modified.
+	 *            The source image of a number place puzzle. It is not modified.
 	 * @param result
-	 *            An empty Mat object to receive an image data showing
-	 *            a detected puzzle board. It is primarily for
-	 *            debugging. Set to null if you don't want to receive
-	 *            it.
+	 *            An empty Mat object to receive an image data showing a
+	 *            detected puzzle board. It is primarily for debugging. Set to
+	 *            null if you don't want to receive it.
 	 * @param puzzle
-	 *            A nine by nine array to receive the recognized
-	 *            puzzle.
+	 *            A nine by nine array to receive the recognized puzzle.
 	 * @return
 	 *            True if a puzzle is successfully recognized.
 	 */
 	public static boolean recognize(Ocr ocr, Mat source, Mat result, byte[][] puzzle) {
-		
+
 		// Recognize the puzzle board and get a right-fit image of the
 		// board.
 		Mat right = new Mat();
@@ -79,23 +76,22 @@ public class ImageProcessing {
 	}
 
 	/***
-	 * Recognize a puzzle board in a source image and transform the
-	 * board part of the image to be <i>right</i>.  The resulting
-	 * image will be gray scale (as opposed to color) and will have a
-	 * size of exactly UNIT * 11 by UNIT * 11 pixels with its central
-	 * UNIT * 9 by UNIT * 9 square area occupied by the puzzle board.
-	 * 
+	 * Recognize a puzzle board in a source image and transform the board part
+	 * of the image to be <i>right</i>. The resulting image will be gray scale
+	 * (as opposed to color) and will have a size of exactly UNIT*11 by UNIT*11
+	 * pixels with its central UNIT*9 by UNIT*9 square area occupied by the
+	 * puzzle board.
+	 *
 	 * @param source
-	 * 			  The source image containing a puzzle board.  It is
-	 *            not modified.
+	 *            The source image containing a puzzle board. It is not
+	 *            modified.
 	 * @param right
-	 *            A Mat object to receive the right image of the
-	 *            puzzle board.
+	 *            A Mat object to receive the right image of the puzzle board.
 	 * @return
 	 *            True if a board is successfully recognized.
 	 */
 	private static boolean recognizeBoard(Mat source, Mat right) {
-		
+
 		// Prepare a clean gray scale image of the source for
 		// processing.
 		final Mat gray = new Mat();
@@ -123,11 +119,11 @@ public class ImageProcessing {
 		// parallel to the camera's lens plane, and the puzzle image
 		// is deformed in perspective.  We need to compensate it
 		// before going further.
-		// 
+		//
 		// Of course, the image is often deformed by other factors,
 		// too, e.g., lens aberration or curved paper.  For the
 		// moment, we ignore them.
-		// 
+		//
 		// Assuming the fit quadrangle is a good estimation of the
 		// outer border of the puzzle board, and it was a right square
 		// on its original surface, perform a perspective compensation
@@ -146,7 +142,7 @@ public class ImageProcessing {
 
 	/***
 	 * Make a gray scale image from an RGBA image, denoising.
-	 * 
+	 *
 	 * @param src
 	 *            An RGBA image of type CV_8UC4.
 	 * @param dst
@@ -163,7 +159,7 @@ public class ImageProcessing {
 	 * Perform a blob analysis on the source gray scale image and
 	 * return their contours. This is just a wrapper around OpenCV
 	 * Imgproc.findContours().
-	 * 
+	 *
 	 * @param src
 	 *            A gray scale image for analysis. This image is not
 	 *            modified.
@@ -189,16 +185,16 @@ public class ImageProcessing {
 				Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV,
 				blockSize, 2);
 
-		// Analyze blob shapes.  We use one of the detected contours 
-		// (the outer contour of the puzzle board) to fit several 
+		// Analyze blob shapes.  We use one of the detected contours
+		// (the outer contour of the puzzle board) to fit several
 		// lines to.  The fitting is by least squares.  For the best
-		// fitting, we need all points in the contour, so the last 
-		// parameter to the following findCOntours should be 
-		// CHAIN_APROX_NONE.  However, the following call usually 
+		// fitting, we need all points in the contour, so the last
+		// parameter to the following findCOntours should be
+		// CHAIN_APROX_NONE.  However, the following call usually
 		// return a lot of contours, say 500-600, and large contour
 		// contain thousands of points, if we don't approximate.
-		// Experiments showed that the differences of the line 
-		// fitting to a contour of CHAIN_APPROX_NONE and 
+		// Experiments showed that the differences of the line
+		// fitting to a contour of CHAIN_APPROX_NONE and
 		// CHAIN_APPROX_SIMPLE was very small, and I decided to use
 		// CHAIN_APPROX_SIMPLE here.
 		Imgproc.findContours(tmp, contours, hierarchy,
@@ -207,30 +203,28 @@ public class ImageProcessing {
 	}
 
 	/***
-	 * Given a set of contours of blobs, find a blob that is most
-	 * likely the number place puzzle frame.  We use two criteria: (1)
-	 * the blob has at least nine and at most 81 holes, and (2) the
-	 * blob covers the center of the image.
+	 * Given a set of contours of blobs, find a blob that is most likely the
+	 * number place puzzle frame. We use two criteria: (1) the blob has at least
+	 * nine and at most 81 holes, and (2) the blob covers the center of the
+	 * image.
+	 * <p>
+	 * A number place puzzle is shown in a 9x9 (81) bordered cells. if all the
+	 * borders are fully recognized as a blob, it has 81 holes. However, the
+	 * cells are divided into nine 3x3 blocks, with major borders divide the
+	 * blocks and minor borders divide cells in a block. Minor borders are thin
+	 * and in a lighter color than major borders and/or digits, so parts of
+	 * minor borders often disappear or are broken in the binary image. If all
+	 * minor borders were ignored, only major borders remain, and the puzzle
+	 * frame blob would have nine holes. That's why our first criterion says
+	 * "9 to 81".
+	 * <p>
+	 * The second criterion is ad hoc. Since this app is dedicated for
+	 * recognizing the number place puzzle, when shooting, users are expected to
+	 * _center_ the primary subject, the puzzle. When a user shoots a page of a
+	 * puzzle magazine, for example, the page may show two or more number place
+	 * puzzles, and the picture will very likely contain parts of other puzzles.
+	 * The "covers center" criterion effectively eliminates them.
 	 *
-	 * A number place puzzle is shown in a 9x9 (81) bordered cells.
-	 * if all the borders are fully recognized as a blob, it has 81
-	 * holes.  However, the cells are divided into nine 3x3 blocks,
-	 * with major borders divide the blocks and minor borders divide
-	 * cells in a block.  Minor borders are thin and in a lighter
-	 * color than major borders and/or digits, so parts of minor
-	 * borders often disappear or are broken in the binary image.  If
-	 * all minor borders were ignored, only major borders remain, and
-	 * the puzzle frame blob would have nine holes.  That's why our
-	 * first criterion says "9 to 81".
-	 *
-	 * The second criterion is ad hoc.  Since this app is dedicated
-	 * for recognizing the number place puzzle, when shooting, users
-	 * are expected to _center_ the primary subject, the puzzle.  When
-	 * a user shoots a page of a puzzle magazine, for example, the
-	 * page may show two or more number place puzzles, and the picture
-	 * will very likely contain parts of other puzzles. The "covers
-	 * center" criterion effectively eliminates them.
-	 * 
 	 * @param image_size
 	 *            The size of the image where the contours are on.
 	 * @param contours
@@ -288,15 +282,15 @@ public class ImageProcessing {
 		// could add more criteria, we could run the quad-fit for all
 		// remaining candidates before choosing and evaluate the
 		// fitness, or we could even try detecting digits for all
-		// candidate frames and evaluate biases of the digits from 
+		// candidate frames and evaluate biases of the digits from
 		// expected positions...  FIXME!)
 		return contours.get(candidates.get(0));
 	}
 
 	/***
-	 * The four points defining the right square on the resulting
-	 * image of {@link #adjustPerspective(Mat, Mat, Point[])}.  It is
-	 * used only in that method.
+	 * The four points defining the right square on the resulting image of
+	 * {@link #adjustPerspective(Mat, Mat, Point[])}. It is used only in that
+	 * method.
 	 */
 	private static final Point[] GOAL = new Point[] {
 			new Point(UNIT,      UNIT),
@@ -306,21 +300,20 @@ public class ImageProcessing {
 	};
 
 	/***
-	 * Perform a perspective transformation so that a specified
-	 * quadrangle on the source image is on the central 9x9 parts of
-	 * the whole 11x11 grid on the destination image.  This is to fit
-	 * the detected puzzle frame to the 9x9 right square.
-	 * 
+	 * Perform a perspective transformation so that a specified quadrangle on
+	 * the source image is on the central 9x9 parts of the whole 11x11 grid on
+	 * the destination image. This is to fit the detected puzzle frame to the
+	 * 9x9 right square.
+	 *
 	 * @param src
-	 *            The source image.  It is not modified.
+	 *            The source image. It is not modified.
 	 * @param dst
 	 *            A Mat to receive the resulting image.
 	 * @param quad
-	 *            An array of four points defining a quadrangle on the
-	 *            source image.  The array's length must be four.  The
-	 *            four points must corresponds to the upper left,
-	 *            upper right, bottom right, and bottom left corners
-	 *            in this order.  This array is not modified.
+	 *            An array of four points defining a quadrangle on the source
+	 *            image. The array's length must be four. The four points must
+	 *            corresponds to the upper left, upper right, bottom right, and
+	 *            bottom left corners in this order. This array is not modified.
 	 */
 	private static void adjustPerspective(Mat src, Mat dst, Point[] quad) {
 		final Mat quadMat = new MatOfPoint2f(quad);
@@ -338,13 +331,13 @@ public class ImageProcessing {
 	}
 
 	/***
-	 * Draw the estimated grid lines on the right image.  This is
-	 * primarily to help debugging the puzzle frame detection ({@link
-	 * #chooseFrameContour(Size, List<MatOfPoint>, Mat)}) and quad-fit
-	 * ({@link QuadrangleFitter}) codes.
-	 * 
+	 * Draw the estimated grid lines on the right image. This is primarily to
+	 * help debugging the puzzle frame detection ({@link
+	 * #chooseFrameContour(Size, List<MatOfPoint>, Mat)}) and quad-fit (
+	 * {@link QuadrangleFitter}) codes.
+	 *
 	 * @param right
-     *            The right image of the puzzle as created by {@link
+	 *            The right image of the puzzle as created by {@link
 	 *            #chooseFrameContour(Size, List<MatOfPoint>, Mat)}.
 	 * @param result
 	 *            The right image with estimated grid lines.
@@ -368,21 +361,20 @@ public class ImageProcessing {
 	}
 
 	/***
-	 * Recognize fixed digits on the puzzle board and fill the
-	 * specified puzzle array.  This method is expected to be called
-	 * after a perspective compensation phase.  The source image must
-	 * be of size UNIT * 11 by UNIT * 11 pixels, and the puzzle board
-	 * should be approximately on its central UNIT * 9 by UNIT * 9
-	 * area.
-	 * 
+	 * Recognize fixed digits on the puzzle board and fill the specified puzzle
+	 * array. This method is expected to be called after a perspective
+	 * compensation phase. The source image must be of size UNIT*11 by UNIT*11
+	 * pixels, and the puzzle board should be approximately on its central
+	 * UNIT*9 by UNIT*9 area.
+	 *
 	 * @param ocr
 	 *            An OCR engine.
 	 * @param src
-	 *            The right source image.  It is not modified.
+	 *            The right source image. It is not modified.
 	 * @param puzzle
-	 *            A nine by nine array initialized to all zeros.
-	 *            The recognized digits will be set to appropriate
-	 *            elements of this array upon return.
+	 *            A nine by nine array initialized to all zeros. The recognized
+	 *            digits will be set to appropriate elements of this array upon
+	 *            return.
 	 * @return
 	 *            True if successful.
 	 */
@@ -391,7 +383,7 @@ public class ImageProcessing {
 		// We recognize a digit by focusing on a relatively small area
 		// that the digit is expected to be in.  The area is the
 		// estimated cell plus some margin around it.
-		// 
+		//
 		// We add the margin for two reasons: the estimated cell may
 		// be off from the real position and the digit may exceed the
 		// estimated cell, and we need a part of the grid lines
@@ -401,7 +393,7 @@ public class ImageProcessing {
 		// an empty backgrounds only, it would malfunction by
 		// amplifying minor texture on the surface and camera noises
 		// to find some figures.)
-		// 
+		//
 		// We give the margin UNIT / 2 pixels width, so
 		// the total width and heights of the focus area is UNIT * 2
 		// by UNIT * 2 pixels.
@@ -437,15 +429,14 @@ public class ImageProcessing {
 	}
 
 	/***
-	 * Recognize a digit in an image of a focused area.  It is
-	 * expected that the source image is perspective compensated, is
-	 * gray scale, and contains (parts of) grid lines around the
-	 * digit or an empty cell.
-	 * 
+	 * Recognize a digit in an image of a focused area. It is expected that the
+	 * source image is perspective compensated, is gray scale, and contains
+	 * (parts of) grid lines around the digit or an empty cell.
+	 *
 	 * @param ocr
 	 *            The OCR engine.
 	 * @param src
-	 *            The image of a focused area.  It is not modified.
+	 *            The image of a focused area. It is not modified.
 	 * @return
 	 *            A string representation of the recognized digit.
 	 */
@@ -528,49 +519,45 @@ public class ImageProcessing {
 	}
 
 	/***
-	 * Given a series of contours in a focused area (i.e., a cell with
-	 * some margin), find one for a digit, and return its bounding
-	 * rectangle.
+	 * Given a series of contours in a focused area (i.e., a cell with some
+	 * margin), find one for a digit, and return its bounding rectangle.
 	 * <p>
-	 * We use the following criteria: (1) The size of the blob is not
-	 * too large; (2) The size of the blob is not too small; and (3)
-	 * The center of the blob is within the estimated cell.  If two or
-	 * more contours sertisfied the criteria, take the largest one.
+	 * We use the following criteria: (1) The size of the blob is not too large;
+	 * (2) The size of the blob is not too small; and (3) The center of the blob
+	 * is within the estimated cell. If two or more contours satisfied the
+	 * criteria, take the largest one.
 	 * <p>
-	 * A focused area usually contains a part of grid lines, parts of
-	 * digits from adjacent cells, and noises, as well as the digit in
-	 * the cell.  The first criteria is expected to eliminate the grid
-	 * lines (because they are parts of longer lines trimmed to the
-	 * focused area the blobs from the grid lines will taller and
-	 * wider than a cell,) the second the noises, and the third the
-	 * adjacent digits.
+	 * A focused area usually contains a part of grid lines, parts of digits
+	 * from adjacent cells, and noises, as well as the digit in the cell. The
+	 * first criteria is expected to eliminate the grid lines (because they are
+	 * parts of longer lines trimmed to the focused area the blobs from the grid
+	 * lines will taller and wider than a cell,) the second the noises, and the
+	 * third the adjacent digits.
 	 * <p>
-	 * In my experiments, there are very few chances that multiple
-	 * candidates are detected by the above criteria.  That is, the
-	 * original puzzle board image was too distorted, and the grid
-	 * estimation was not very good, causing the estimated size and
-	 * position of a cell was very different from the real.  In
-	 * particular, the cell size was estimated larger and was located
-	 * just in between two real cells (the center of estimated cell
-	 * was almost on the grid line.)  Both the cell in focus and an
-	 * adjacent cell contained digits.  As a result, the focused area,
-	 * that is an estimated cell plus some large mergin around it,
-	 * contained two (almost) complete blobs from two digits.  It's no
-	 * wonder the algorithm can't find which of the two complete
-	 * digits were the one to be in the cell.  To handle the case
-	 * correctly, we could analyze grid lines in more detail to make
-	 * finer adjustment of the cell estimation.  Or, we could just
-	 * indicate to the upper layer that we failed detecting _one_
-	 * digit blob.  For the moment, since the case is very rare, this
-	 * method silently picks up an arbitrary one.
-	 * 
+	 * In my experiments, there were very few occasions that multiple candidates
+	 * were detected by the above criteria and that were essentially caused by a
+	 * same situation. That is, the original puzzle board image was too
+	 * distorted, and the grid estimation was not very good, causing the
+	 * estimated size and position of a cell was very different from the real.
+	 * In particular, the cell size was estimated larger and was located just in
+	 * between two real cells (the center of estimated cell was almost on the
+	 * grid line.) Both the cell in focus and an adjacent cell contained digits.
+	 * As a result, the focused area, that is an estimated cell plus some large
+	 * margin around it, contained two (almost) complete blobs from two digits.
+	 * It's no wonder the algorithm can't find which of the two complete digits
+	 * were the one to be in the cell. To handle the case correctly, we could
+	 * analyze grid lines in more detail to make finer adjustment of the cell
+	 * estimation. Or, we could just indicate to the upper layer that we failed
+	 * detecting _one_ digit blob. For the moment, since the case is very rare,
+	 * this method silently picks up an arbitrary one.
+	 *
 	 * @param contours
 	 *            The contours.
 	 * @param hierarchy
 	 *            The contour hierarchy informations.
 	 * @return
-	 *            The bounding rectangle of a most likely digit, or a
-	 *            null if no such contour was found.
+	 *            The bounding rectangle of a most likely digit, or a null if no
+	 *            such contour was found.
 	 */
 	private static Rect detectDigitRect(List<MatOfPoint> contours, Mat hierarchy) {
 
@@ -598,7 +585,7 @@ public class ImageProcessing {
 			// aggressive, because some publishers of number place
 			// puzzle use smaller font than others, making larger
 			// spaces around digits.
-			// 
+			//
 			// Also note that a digit "1" may have a very small width.
 			// It's safe to allow any width here.
 			if (rect.height < UNIT / 3)	continue;

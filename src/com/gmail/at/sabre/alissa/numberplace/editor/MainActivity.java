@@ -17,20 +17,26 @@ import com.gmail.at.sabre.alissa.numberplace.R;
 import com.gmail.at.sabre.alissa.numberplace.capture.CaptureActivity;
 import com.gmail.at.sabre.alissa.numberplace.solver.PuzzleSolver;
 
+/***
+ * The main activity of the number place app.
+ *
+ * @author alissa
+ *
+ */
 public class MainActivity extends Activity {
-	
+
 	private static final String TAG = "numberplace..MainActivity";
-	
+
 	private static final int REQ_CAPTURE = 1;
-	
+
 	private Handler mHandler;
 	private PuzzleSolver mSolver;
 	private PuzzleEditorView mPuzzleEditor;
-	
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
-        
+
     	super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         findViewById(R.id.button_capture).setOnClickListener(new View.OnClickListener() {
@@ -50,18 +56,18 @@ public class MainActivity extends Activity {
 		});
 
         findViewById(R.id.busy).setVisibility(View.INVISIBLE);
-        
+
         mHandler = new Handler();
         mSolver = new PuzzleSolver();
         mPuzzleEditor = (PuzzleEditorView)findViewById(R.id.puzzleEditorView);
     }
-    
+
 	@Override
     public void onSaveInstanceState(Bundle outState) {
     	super.onSaveInstanceState(outState);
     	mPuzzleEditor.saveState(outState);
     }
-    
+
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
     	super.onRestoreInstanceState(savedInstanceState);
@@ -70,25 +76,25 @@ public class MainActivity extends Activity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data); // Don't we need this?  FIXME
+		super.onActivityResult(requestCode, resultCode, data); // Is this unneeded?  FIXME
 		if (requestCode == REQ_CAPTURE && resultCode == RESULT_OK) {
 			Object obj = data.getSerializableExtra(K.EXTRA_PUZZLE_DATA);
 			// Hmm... It appears that a serialized byte[][] object ("[[B")
 			// is deserialized back as an Object[] containing byte[].
 			// I don't know why.  Anyway we need to live with it.
+			// Well, I have a slight feeling that the choice of byte[][]
+			// for puzzle data *was* not wise. XXX
 			onPuzzleCapture(toByteArrayArray(obj));
 		}
 	}
-	
+
 	@Override
 	protected void onResume() {
 		super.onResume();
-		
-		// This MainActivity doesn't need OpenCV library,
-		// but the initialization may pop up a dialog and
-		// may invoke Google Play App for downloading
-		// OpenCV stuff, so it's better the process to happen
-		// early.
+
+		// This MainActivity doesn't need OpenCV library, but the initialization
+		// may pop up a dialog and may invoke Google Play App for downloading
+		// OpenCV stuff, so it's better the process to happen early.
 		Log.i(TAG, "start initializing OpenCV");
 		final Context appContext = this;
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, appContext, new BaseLoaderCallback(appContext) {
@@ -115,7 +121,7 @@ public class MainActivity extends Activity {
 		request.putExtra(K.EXTRA_DEVICE_ROTATION, getWindowManager().getDefaultDisplay().getRotation());
     	startActivityForResult(request, REQ_CAPTURE);
 	}
-    
+
     private void onPuzzleCapture(byte[][] puzzle) {
     	mPuzzleEditor.setFixedDigits(puzzle);
     	mPuzzleEditor.setSolution(null);
@@ -124,13 +130,13 @@ public class MainActivity extends Activity {
     private void buttonSolve_onClick(View view) {
     	mPuzzleEditor.setEnabled(false);
     	mPuzzleEditor.setSolution(null);
-    	
+
     	findViewById(R.id.busy).setVisibility(View.VISIBLE);
 
     	findViewById(R.id.button_capture).setEnabled(false);
     	findViewById(R.id.button_solve).setEnabled(false);
     	findViewById(R.id.button_about).setEnabled(false);
-    	
+
     	// The following code fragment does:
     	// (1) Execute mSolver.solve() in a separate thread.
     	// (2) Then, execute onPuzzleSolved() in the UI thread.
@@ -147,7 +153,7 @@ public class MainActivity extends Activity {
     		}
     	}.start();
     }
-    
+
     private void onPuzzleSolved(byte[][] solution) {
     	mPuzzleEditor.setSolution(solution);
     	mPuzzleEditor.setEnabled(true);
@@ -157,16 +163,16 @@ public class MainActivity extends Activity {
     	findViewById(R.id.button_about).setEnabled(true);
 
     	findViewById(R.id.busy).setVisibility(View.INVISIBLE);
-    	
+
     	if (solution == null) {
     		Toast.makeText(getApplicationContext(), R.string.toast_text_impossible, Toast.LENGTH_LONG).show();
     	}
     }
-    
+
     private void buttonAbout_onClick(View view) {
     	startActivity(new Intent(getApplicationContext(), AboutActivity.class));
     }
-    
+
     private byte[][] toByteArrayArray(Object obj) {
     	try {
     		Object[] src = (Object[])obj;
