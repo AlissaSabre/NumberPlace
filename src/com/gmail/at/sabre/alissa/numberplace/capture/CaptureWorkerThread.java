@@ -28,6 +28,8 @@ class CaptureWorkerThread extends Thread {
 
 	private Bitmap mBitmap = null;
 
+	private int mRotationHint = 0;
+
 	private final Object mLock = new Object();
 
 	private volatile boolean mQuit = false;
@@ -72,6 +74,26 @@ class CaptureWorkerThread extends Thread {
 	}
 
 	/***
+	 * Set the hint about the orientation of bitmap image data.
+	 * <p>
+	 * If the caller can somehow guess how much puzzle board is rotated in the
+	 * bitmap image data, pass the information with this method. The rotation is
+	 * how much the puzzle board is rotated counterclockwise. When the puzzle board is
+	 * just up right in the image, the rotation is zero. When the puzzle board
+	 * is totally on its side, and the image's left side is the puzzle board's
+	 * top, the rotation is 90.
+	 * <p>
+	 * This is only a hint. The caller need not to call this method.
+	 *
+	 * @param rotation
+	 *            Rotation of the puzzle in the bitmap image. It is measured
+	 *            clockwise in degrees and is a zero or positive value.
+	 */
+	public void setBitmapRotationHint(int rotation) {
+		mRotationHint = rotation;
+	}
+
+	/***
 	 * Request this thread to stop. It may take some time before the thread to
 	 * actually stop.
 	 */
@@ -106,7 +128,7 @@ class CaptureWorkerThread extends Thread {
 		byte[][] puzzle = null;
 		if (mBitmap != null) {
 			puzzle = new byte[9][9];
-			captured = recognize(mOcr, mBitmap, puzzle);
+			captured = recognize(mOcr, mBitmap, mRotationHint, puzzle);
 			if (captured == null) puzzle = null;
 		}
 
@@ -135,7 +157,7 @@ class CaptureWorkerThread extends Thread {
 //		return puzzle;
 //	}
 
-	private static Bitmap recognize(Ocr ocr, Bitmap src_bitmap, byte[][] puzzle) {
+	private static Bitmap recognize(Ocr ocr, Bitmap src_bitmap, int rotation_hint, byte[][] puzzle) {
 		if (src_bitmap.getConfig() != Config.RGB_565 &&
 			src_bitmap.getConfig() != Config.ARGB_8888) return null;
 
@@ -143,7 +165,7 @@ class CaptureWorkerThread extends Thread {
 		Utils.bitmapToMat(src_bitmap, src);
 
 		final Mat dst = new Mat();
-		final boolean success = ImageProcessing.recognize(ocr, src, dst, puzzle);
+		final boolean success = ImageProcessing.recognize(ocr, src, dst, rotation_hint, puzzle);
 
 		Bitmap dst_bitmap = null;
 		if (success) {
@@ -156,4 +178,5 @@ class CaptureWorkerThread extends Thread {
 
 		return dst_bitmap;
 	}
+
 }

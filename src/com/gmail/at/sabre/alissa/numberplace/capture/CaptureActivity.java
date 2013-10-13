@@ -23,7 +23,7 @@ import com.gmail.at.sabre.alissa.ocr.Ocr;
 
 /**
  * An activity to run a separate thread to recognize a puzzle board on a
- * picture. From the UI perspective, the only apperance of this activity is to
+ * picture. From the UI perspective, the only appearance of this activity is to
  * show an indeterminate progress bar (a rounding circle) until the puzzle
  * recognition is complete. :-) It usually takes several seconds unless the CPU
  * is too slow.
@@ -59,6 +59,8 @@ public class CaptureActivity extends Activity {
 		final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 		((ImageView)findViewById(R.id.imageView)).setImageBitmap(bitmap);
 
+		final int camera_rotation = getIntent().getIntExtra(K.EXTRA_DEVICE_ROTATION, -1);
+
 		mThread = new CaptureWorkerThread();
         mThread.setOcr(prepareOcr());
 		mThread.setBitmap(bitmap);
@@ -67,6 +69,11 @@ public class CaptureActivity extends Activity {
 				thread_onPuzzleRecognized(puzzle, bitmap);
 			}
 		});
+
+		final int bitmapRotation = calculateBitmapRotation(camera_rotation);
+		if (bitmapRotation >= 0) {
+			mThread.setBitmapRotationHint(bitmapRotation);
+		}
     }
 
     private Ocr prepareOcr() {
@@ -81,6 +88,35 @@ public class CaptureActivity extends Activity {
     		throw new RuntimeException(e);
     	}
     }
+
+    /***
+     * Calculate how much the bitmap image data is rotated from the real orientation.
+     * The rotation is measured counterclockwise in degrees with 90 degree steps.
+     *
+     * @param camera_rotation
+     * @return
+     */
+    private int calculateBitmapRotation(int camera_rotation) {
+		// What we actually do is to estimating the camera orientation by
+		// comparing two logical device orientation.
+    	final int deviceRotation = rotationDegree(getWindowManager().getDefaultDisplay().getRotation());
+    	final int cameraRotation = rotationDegree(camera_rotation);
+    	if (deviceRotation < 0 || cameraRotation < 0) {
+    		return -1;
+    	} else {
+    		return ((cameraRotation - deviceRotation + 360) % 360);
+    	}
+    }
+
+	private static int rotationDegree(int rotation) {
+		switch (rotation) {
+		    case Surface.ROTATION_0:   return 0;
+		    case Surface.ROTATION_90:  return 90;
+		    case Surface.ROTATION_180: return 180;
+		    case Surface.ROTATION_270: return 270;
+		}
+		return -1;
+	}
 
 	@Override
 	protected void onResume() {
@@ -121,16 +157,5 @@ public class CaptureActivity extends Activity {
 		super.onDestroy();
 		mThread.quit();
 		mThread = null;
-	}
-
-	// TODO: Take care of device rotation.  The following method may help.
-	private static int rotationToDegree(int rotation) {
-		switch (rotation) {
-		    case Surface.ROTATION_0:   return 0;
-		    case Surface.ROTATION_90:  return 90;
-		    case Surface.ROTATION_180: return 180;
-		    case Surface.ROTATION_270: return 270;
-		}
-		return -1;
 	}
 }

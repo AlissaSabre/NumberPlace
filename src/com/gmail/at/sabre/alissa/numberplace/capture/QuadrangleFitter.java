@@ -333,33 +333,9 @@ public abstract class QuadrangleFitter {
 
 	/***
 	 * Reorder the array of four points that define a quadrangle so that the
-	 * points are on a right order, i.e., upper left, upper right, lower right,
-	 * then lower left.
+	 * points are ordered clockwise.
 	 */
 	private static void reorderPoints(Point[] points) {
-
-		// Find the upper left corner, assuming it is the one most
-		// close to the origin.  (i.e., the original image's upper
-		// left corner.)
-		int w = 0;
-		double d = Double.MAX_VALUE;
-		for (int i = 0; i < points.length; i++) {
-			final Point p = points[i];
-			final double e = p.x * p.x + p.y * p.y;
-			if (e < d) {
-				d = e;
-				w = i;
-			}
-		}
-
-		// Make the upper left corner the first point by shifting
-		// elements in the array.
-		if (w > 0) {
-			final Point[] temp = new Point[w];
-			System.arraycopy(points, 0, temp, 0, w);
-			System.arraycopy(points, w, points, 0, points.length - w);
-			System.arraycopy(temp, 0, points, points.length - w, w);
-		}
 
 		// Use cross products of first few (two, actually) edges to
 		// see whether the points are in clockwise.
@@ -369,12 +345,12 @@ public abstract class QuadrangleFitter {
 		final double y1 = points[1].y - points[2].y;
 		final double cross = x0 * y1 - y0 * x1;
 
+		// If it is counterclockwise, reverse the order.
 		// Be careful when interpreting signs of cross products to
 		// note that our coordinate system is flipped from the
 		// standard mathematical planar systems in that the Y axis
 		// grows toward bottom.  This alert is to myself! :-(
 		if (cross < 0) {
-			// Reorder in reverse _wise_
 			for (int i = 1, j = points.length - 1; i < j; i++, --j) {
 				final Point t = points[i];
 				points[i] = points[j];
@@ -383,4 +359,38 @@ public abstract class QuadrangleFitter {
 		}
 	}
 
+	public static void adjustOrientation(int expected_rotation, Point[] points) {
+
+		// Find a point that is at the most upper left position.
+		// _Most_upper_left_ point is a point that is most close to a
+		// line y == x if the expected rotation is zero.  What we
+		// actually do is not measuring the distance to the line y ==
+		// x but choosing a point whose x coordinate value is minimum
+		// after rotating the points around the origin 45 degree
+		// counterclockwise.  When rotating, we consider the expected
+		// rotation.  Be careful that our coordinate system is flipped
+		// from the standard mathematical coordinate system in that
+		// the Y axis increases toward bottom.  Got the idea?  OK.
+		// The code follows:
+		final double a = Math.cos((45 - expected_rotation) / (Math.PI * 2));
+		final double b = Math.sin((45 - expected_rotation) / (Math.PI * 2));
+		double min = Double.MAX_VALUE;
+		int w = 0;
+		for (int i = 0; i < points.length; i++) {
+			final double x = a * points[i].x + b * points[i].y;
+			if (x < min) {
+				min = x;
+				w = i;
+			}
+		}
+
+		// Make the found upper left point the first point in the array
+		// by shifting elements in the array.
+		if (w > 0) {
+			final Point[] temp = new Point[w];
+			System.arraycopy(points, 0, temp, 0, w);
+			System.arraycopy(points, w, points, 0, points.length - w);
+			System.arraycopy(temp, 0, points, points.length - w, w);
+		}
+	}
 }
