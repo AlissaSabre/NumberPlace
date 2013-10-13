@@ -15,9 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Surface;
-import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.gmail.at.sabre.alissa.numberplace.K;
 import com.gmail.at.sabre.alissa.numberplace.R;
@@ -37,10 +35,6 @@ public class CaptureActivity extends Activity {
 
 	private static final String TAG = ".numberplace..CaptureActivity";
 
-	private static final int REQ_CAMERA = 777;
-
-	// private static final String EXTRA_BITMAPDATA = "data";
-
 	private Handler mHandler;
 
 	private CaptureWorkerThread mThread;
@@ -54,24 +48,25 @@ public class CaptureActivity extends Activity {
 
 		// If the user turns the device when the view (a rounding circle) of
 		// this activity is visible, this activity is destroyed and recreated to
-		// update the view orientation. It causes two bad side effects:
-		// (1) The CaptureWorkerThread is destroyed and restarted, dropping all
+		// update the view orientation. It causes a bad side effects: The
+        // CaptureWorkerThread is discarded and another instance is restarted,
+        // dropping all
 		// intermediate results from a time consuming recognition jobs.
-		// (2) The CameraActivity is restarted. It appears to user that the app
-		// requested to take a picture twice for a single touch on "Capture"
-		// button on the main activity.
+        // It is a waste of CPU power and battery life.
 		// FIXME!
 
-        mThread = new CaptureWorkerThread();
+		final byte[] bytes = getIntent().getByteArrayExtra(K.EXTRA_IMAGE_DATA);
+		final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+		((ImageView)findViewById(R.id.imageView)).setImageBitmap(bitmap);
+
+		mThread = new CaptureWorkerThread();
         mThread.setOcr(prepareOcr());
+		mThread.setBitmap(bitmap);
         mThread.setCallback(new CaptureWorkerThread.Callback() {
 			public void onPuzzleRecognized(byte[][] puzzle, Bitmap bitmap) {
 				thread_onPuzzleRecognized(puzzle, bitmap);
 			}
 		});
-
-        Intent request = new Intent(getApplicationContext(), CameraActivity.class);
-        startActivityForResult(request, REQ_CAMERA);
     }
 
     private Ocr prepareOcr() {
@@ -86,21 +81,6 @@ public class CaptureActivity extends Activity {
     		throw new RuntimeException(e);
     	}
     }
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-		if (requestCode == REQ_CAMERA) {
-			if (resultCode == RESULT_OK) {
-				final byte[] bytes = data.getByteArrayExtra(K.EXTRA_IMAGE_DATA);
-				Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-				((ImageView)findViewById(R.id.imageView)).setImageBitmap(bitmap);
-				mThread.setBitmap(bitmap);
-			} else {
-				mThread.quit();
-			}
-		}
-	}
 
 	@Override
 	protected void onResume() {
@@ -125,26 +105,13 @@ public class CaptureActivity extends Activity {
 		});
 	}
 
-	private void thread_onPuzzleRecognized(final byte[][] puzzle, final Bitmap bitmap) {
-		if (bitmap != null) {
-			mHandler.post(new Runnable() {
-				public void run() {
-					((ImageView)findViewById(R.id.imageView)).setImageBitmap(bitmap);
-					((TextView)findViewById(R.id.debug_text)).setText(String.format("%d x %d", bitmap.getWidth(), bitmap.getHeight()));
-				}
-			});
-		}
-
+	private void thread_onPuzzleRecognized(final byte[][] puzzle, Bitmap bitmap) {
 		mHandler.post(new Runnable() {
 			public void run() {
-				((ImageView)findViewById(R.id.imageView)).setOnClickListener(new View.OnClickListener() {
-					public void onClick(View v) {
-						Intent result = new Intent();
-						result.putExtra(K.EXTRA_PUZZLE_DATA, puzzle);
-						setResult((puzzle == null) ? RESULT_CANCELED : RESULT_OK, result);
-						finish();
-					}
-				});
+				Intent result = new Intent();
+				result.putExtra(K.EXTRA_PUZZLE_DATA, puzzle);
+				setResult((puzzle == null) ? RESULT_CANCELED : RESULT_OK, result);
+				finish();
 			}
 		});
     }

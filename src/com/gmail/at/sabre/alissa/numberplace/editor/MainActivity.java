@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import com.gmail.at.sabre.alissa.numberplace.K;
 import com.gmail.at.sabre.alissa.numberplace.R;
+import com.gmail.at.sabre.alissa.numberplace.capture.CameraActivity;
 import com.gmail.at.sabre.alissa.numberplace.capture.CaptureActivity;
 import com.gmail.at.sabre.alissa.numberplace.solver.PuzzleSolver;
 
@@ -27,7 +28,9 @@ public class MainActivity extends Activity {
 
 	private static final String TAG = "numberplace..MainActivity";
 
-	private static final int REQ_CAPTURE = 1;
+	private static final int REQ_CAMERA = 1;
+
+	private static final int REQ_CAPTURE = 2;
 
 	private Handler mHandler;
 	private PuzzleSolver mSolver;
@@ -77,6 +80,14 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data); // Is this unneeded?  FIXME
+
+		if (requestCode == REQ_CAMERA && resultCode == RESULT_OK) {
+	    	Intent request = new Intent(getApplicationContext(), CaptureActivity.class);
+	    	request.putExtra(K.EXTRA_IMAGE_DATA, data.getByteArrayExtra(K.EXTRA_IMAGE_DATA));
+	    	request.putExtra(K.EXTRA_DEVICE_ROTATION, data.getIntExtra(K.EXTRA_DEVICE_ROTATION, -1));
+	    	startActivityForResult(request, REQ_CAPTURE);
+		}
+
 		if (requestCode == REQ_CAPTURE && resultCode == RESULT_OK) {
 			Object obj = data.getSerializableExtra(K.EXTRA_PUZZLE_DATA);
 			// Hmm... It appears that a serialized byte[][] object ("[[B")
@@ -117,9 +128,8 @@ public class MainActivity extends Activity {
     }
 
     private void buttonCapture_onClick(View v) {
-    	Intent request = new Intent(getApplicationContext(), CaptureActivity.class);
-		request.putExtra(K.EXTRA_DEVICE_ROTATION, getWindowManager().getDefaultDisplay().getRotation());
-    	startActivityForResult(request, REQ_CAPTURE);
+    	Intent request = new Intent(getApplicationContext(), CameraActivity.class);
+    	startActivityForResult(request, REQ_CAMERA);
 	}
 
     private void onPuzzleCapture(byte[][] puzzle) {

@@ -18,8 +18,6 @@ import com.gmail.at.sabre.alissa.ocr.Ocr;
  */
 class CaptureWorkerThread extends Thread {
 
-	private static final String TAG = ".numberplace..CaptureWorkerThread";
-
 	public interface Callback {
 		public void onPuzzleRecognized(byte[][] puzzle, Bitmap bitmap);
 	}
@@ -78,7 +76,11 @@ class CaptureWorkerThread extends Thread {
 	 * actually stop.
 	 */
 	public void quit() {
+		// Unless it is waiting a lock, this thread can't stop immediately. As a
+		// workaround we remove callback so that the main activity doesn't notice
+		// this thread kept working.
 		synchronized (mLock) {
+			mCallback = null;
 			mQuit = true;
 			mLock.notifyAll();
 		}
