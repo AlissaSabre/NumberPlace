@@ -69,7 +69,7 @@ public abstract class QuadrangleFitter {
 		tentativeQuad[3] = pair2[1];
 
 		// Divide the contour into four groups of points, the edges.
-		final Mat[] edges = divideContour(contour, tentativeQuad);
+		final MatOfPoint[] edges = divideContour(contour, tentativeQuad);
 		
 		// Use OpenCV fitLine function repeatedly to find lines that
 		// fit to each edge.
@@ -193,17 +193,18 @@ public abstract class QuadrangleFitter {
 	}
 	
 	/***
-	 * Divide points in contour into four separate set of points based on the
-	 * tentative quad corners.
+	 * Divide points in contour into four separate set of points based
+	 * on the tentative quad corners.
 	 * 
 	 * @param contour
 	 *            The contour to divide.
 	 * @param quad
 	 *            Four points in the contour.
 	 * @return
-	 *            An array of four Mat each of which contains points appropriate for an edge of a quadrangle.
+	 *            An array of four Mat each of which contains points
+	 *            appropriate for an edge of a quadrangle.
 	 */
-	private static Mat[] divideContour(MatOfPoint contour, Point[] quad) {
+	private static MatOfPoint[] divideContour(MatOfPoint contour, Point[] quad) {
 
 		final Point[] points = contour.toArray();
 		
@@ -233,13 +234,17 @@ public abstract class QuadrangleFitter {
 			}
 		}
 
-		// Extract points between two corner points in quad to form four edges.  A corner point is included in both two adjacent edges. 
-		final Mat[] edges = new Mat[indexes.length]; 
+		// Extract points between two corner points in quad to form
+		// four edges.  A corner point is included in both two
+		// adjacent edges.
+		final MatOfPoint[] edges = new MatOfPoint[indexes.length]; 
 		for (int i = 0; i < indexes.length; i++) {
 			final int m = indexes[i];
 			final int n = indexes[(i + 1) % indexes.length];
 			if (m < n) {
-				edges[i] = contour.rowRange(m,  n);
+				Mat tmp = contour.rowRange(m,  n);
+				edges[i] = new MatOfPoint(tmp);
+				tmp.release();
 			} else {
 				final Point[] edge = new Point[points.length - m + n + 1];
 				System.arraycopy(points, m, edge, 0, points.length - m);
@@ -254,10 +259,13 @@ public abstract class QuadrangleFitter {
 	/***
 	 * A wrapper around OpenCV fitLine function.
 	 * 
-	 * @param edges An array of sets of points to fit a line to.
-	 * @return The line parameters as calculated by OpenCV fitLine function.
+	 * @param edges
+	 *            An array of sets of points to fit a line to.
+	 * @return
+	 *            The line parameters as calculated by OpenCV fitLine
+	 *            function.
 	 */
-	private static Mat[] fitLines(Mat[] edges) {
+	private static Mat[] fitLines(MatOfPoint[] edges) {
 		final Mat[] lines = new Mat[edges.length];
 		for (int i = 0; i < edges.length; i++) {
 			final Mat line = new Mat();
@@ -267,37 +275,52 @@ public abstract class QuadrangleFitter {
 		return lines;
 	}
 
+	/***
+	 * Given a series of line parameters as calculated by OpenCV fitLine
+	 * function, calculate a series of crossing pints of two consecutive lines.
+	 * 
+	 * @param lines
+	 *            Series of line parameters.
+	 * @return
+	 *            Series of crossing points.
+	 */
 	private static Point[] calculateCrossingPoint(Mat[] lines) {
+		final int length = lines.length;
 		
-		// Extract the array parameters out of Mats.
-		final float[][] linesArray = new float[lines.length][4];
-		for (int i = 0; i < lines.length; i++) {
+		// Extract the line parameters out of Mats.
+		final float[][] lineParams = new float[lines.length][];
+		for (int i = 0; i < length; i++) {
 			final MatOfFloat line = new MatOfFloat(lines[i]);
-			linesArray[i] = line.toArray();
+			lineParams[i] = line.toArray();
 			line.release();
 		}
 		
-		final Point[] points = new Point[linesArray.length];
-		for (int i = 0; i < linesArray.length; i++) {
-
-			// Calculate the crossing point of the i'th line and
-			// i+1'th line.  In the following expressions, one for s
-			// is the key.  It is the solution of a formula
-			// representing a crossing point.
-
-			final float[] l1 = linesArray[i];
-			final float[] l2 = linesArray[(i + 1) % linesArray.length];
+		final Point[] points = new Point[length];
+		for (int i = 0; i < length; i++) {
 			
-			final double px = l1[0];
-			final double py = l1[1];
-			final double ax = l1[2];
-			final double ay = l1[3];
-			final double qx = l2[0];
-			final double qy = l2[1];
-			final double bx = l2[2];
-			final double by = l2[3];
-			
-			final double s = (qy * (bx - ax) - qx * (by - ay)) / (px * qy - qx * py);
+			// Load line parameters into a set of handy variables. Those of the
+			// i'th line to p and a, and of i+1'th q and b.
+			final int j = (i + 1) % length;
+			final float[] li = lineParams[i];
+			final float[] lj = lineParams[j];
+			final double px = li[0];
+			final double py = li[1];
+			final double ax = li[2];
+			final double ay = li[3];
+			final double qx = lj[0];
+			final double qy = lj[1];
+			final double bx = lj[2];
+			final double by = lj[3];
+
+			// Find the crossing point of the i'th line and i+1'th.
+			// d is a dterminant of a matrix of two collinear vectors,
+			// p and q.  d is (almost) zero if and only if the two
+			// lines are (almost) parallel.  We don't test the case,
+			// because it never happens.  s is (a part of) a formula
+			// to give a solution to an equation representing a
+			// crossing point of two lines.
+			final double d = px * qy - qx * py;
+			final double s = (qy * (bx - ax) - qx * (by - ay)) / d;
 			
 			final double rx = s * px + ax;
 			final double ry = s * py + ay;
