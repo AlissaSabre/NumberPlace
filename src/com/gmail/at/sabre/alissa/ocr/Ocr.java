@@ -52,7 +52,7 @@ public class Ocr {
 	 * Constructor used with {@link Builder}. {@link #mDecoder} will be set
 	 * later. FIXME!
 	 */
-	Ocr(Params params) {
+	public Ocr(Params params) {
 		mThumbWidth = params.mThumbWidth;
 		mThumbHeight = params.mThumbHeight;
 		mThumbSize = new Size(params.mThumbWidth, params.mThumbHeight);
