@@ -288,7 +288,12 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		// What I don't know is how to rewrite it...
 		final Runnable shoot = new Runnable() {
 			public void run() {
-				mCamera.takePicture(null, null, new Camera.PictureCallback() {
+				mCamera.takePicture(new Camera.ShutterCallback() {
+					public void onShutter() {
+					}
+				},
+				null,
+				new Camera.PictureCallback() {
 					// This callback is for JPEG, by the way.
 					public void onPictureTaken(final byte[] data, Camera camera) {
 						final byte[] copy = data.clone();
