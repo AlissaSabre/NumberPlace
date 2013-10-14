@@ -65,7 +65,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 	 * app's lowest supported Android version (2.2 (API8)), but it is no
 	 * problem. The values are read from the .class file of
 	 * {@link android.hardware.Camera.Parameters} during compile time, and plain
-	 * int constants are stored in the DEX file.
+	 * string constants are stored in the DEX file.
 	 */
 	@SuppressLint("InlinedApi")
 	private static final String[] FOCUS_MODE_PREFERENCES = {
@@ -133,37 +133,57 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		    		throw new RuntimeException("Can't open the default camera");
 		    	}
 
-				// Find and use a reasonable picture size. We will use a largest
+		    	// Get the camera parameters.
+		    	final Camera.Parameters params = mCamera.getParameters();
+
+		    	// Find and use a reasonable picture size. We will use a largest
 				// size whose width and height are both within the MAX_SIZE. If
-				// no such size is available, i.e., if all supported sizes
-				// exceeded the app's maximum, use the minimum one.
-		    	Camera.Parameters params = mCamera.getParameters();
+		    	// there are multiple candidates (and usually they are), choose
+		    	// the one with the longest shorter side.
+		    	// Note that a usual number place puzzle board is a right square.
 		    	List<Camera.Size> list = params.getSupportedPictureSizes();
-		    	Camera.Size optimal = list.get(0);
-		    	for (int i = 1; i < list.size(); i++) {
-		    		Camera.Size size = list.get(i);
-		    		if (size.width * size.height < optimal.width * optimal.height) {
+		    	final Camera.Size ZERO = mCamera.new Size(0, 0);
+		    	Camera.Size optimal = ZERO;
+		    	// Look for the _real_ optimal size.
+		    	for (int i = 0; i < list.size(); i++) {
+		    		final Camera.Size size = list.get(i);
+		    		if (Math.max(size.width, size.height) <= MAX_SIZE
+		    			&& (Math.min(size.width, size.height) > Math.min(optimal.width, optimal.height)
+		    				|| (Math.min(size.width, size.height) == Math.min(optimal.width, optimal.height)
+		    					&& Math.max(size.width, size.height) < Math.max(optimal.width, optimal.height)))) {
 		    			optimal = size;
 		    		}
 		    	}
-		    	for (int i = 0; i < list.size(); i++) {
-		    		Camera.Size size = list.get(i);
-		    		if (Math.max(size.width, size.height) <= MAX_SIZE
-		    				&& size.width * size.height > optimal.width * optimal.height) {
-		    			optimal = size;
-		    		}
+				// If no such size is available, i.e., if all supported sizes
+				// exceeded the app's maximum, use the minimum one as a fall back.
+		    	if (optimal == ZERO) {
+		    		optimal = list.get(0);
+			    	for (int i = 1; i < list.size(); i++) {
+			    		final Camera.Size size = list.get(i);
+			    		if (size.width * size.height < optimal.width * optimal.height) {
+			    			optimal = size;
+			    		}
+			    	}
 		    	}
 
-		    	// Find a matching preview size.
+		    	// Find a matching preview size with the optimal picture size.
+		    	// It should have exactly same aspect ratio as optimal size
+		    	// and should not be too large.
 		    	list = params.getSupportedPreviewSizes();
-		    	Camera.Size preview = list.get(0);
-		    	for (int i = 1; i < list.size(); i++) {
+		    	Camera.Size preview = ZERO;
+		    	for (int i = 0; i < list.size(); i++) {
 		    		Camera.Size size = list.get(i);
-		    		if (size.width * preview.height == size.height * preview.width) {
-		    			preview = size;
-		    			break;
+		    		if (size.width * optimal.height == size.height * optimal.width
+		    			&& size.width <= optimal.width && size.width > preview.width) {
+	    				preview = size;
 		    		}
 		    	}
+		    	// Since preview is a preview, all picture size should have at
+		    	// least one preview size that has a same aspect ratio with the
+		    	// picture size and whose size is smaller than or at least equal
+		    	// to the picture size.
+		    	// The following is the last resort fall back that will never be used.
+		    	if (preview == ZERO) preview = list.get(0);
 
 		    	// Update the camera parameter if needed.
 		    	if (params.getPictureSize() != optimal || params.getPreviewSize() != preview) {
@@ -172,7 +192,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		    		mCamera.setParameters(params);
 		    	}
 
-		    	// Take care of focus mode.
+		    	// Next, take care of focus mode.
 		    	String currentFocusMode = params.getFocusMode();
 		    	List<String> supportedFocusModes = params.getSupportedFocusModes();
 		    	int currentModePreference = Arrays.asList(FOCUS_MODE_PREFERENCES).indexOf(currentFocusMode);
