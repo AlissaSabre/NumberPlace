@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gmail.at.sabre.alissa.numberplace"
     android:versionCode="2"
-    android:versionName="0.63" >
+    android:versionName="0.64" >
 
     <uses-sdk
         android:minSdkVersion="8"
@@ -28,11 +28,11 @@
             android:name=".capture.CameraActivity"
             android:label="@string/title_activity_camera"
             android:screenOrientation="landscape" android:theme="@style/AppTheme.Fullscreen" >
-        </activity>           
+        </activity>
         <activity
             android:name=".editor.AboutActivity"
             android:label="@string/title_activity_about" >
         </activity>
     </application>
-    
+
 </manifest>
