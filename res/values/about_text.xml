@@ -6,7 +6,7 @@ Number Place Breaker by Alissa Sabre
 \nNumber Place Breaker is written by Alissa Sabre (http://alissa-sabre.cocolog-nifty.com).
 It is not a practical application; it is just an experiment or a proof-of-concept.
 Please use it on your own risk.
-\nThis work was inspired by an excellent article by Naoyuki Tamura available as http://bach.istc.kobe-u.ac.jp/copris/puzzles/
+\nThe solver part of this work was inspired by an excellent article by Naoyuki Tamura available as http://bach.istc.kobe-u.ac.jp/copris/puzzles/
 \n
 \nFull source code of this program is available on Github at http://github.com/AlissaSabre/NumberPlace
 \n
@@ -85,6 +85,6 @@ under the following permissive license:
 \n  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 \n
 \n“数独” and/or “Sudoku” appear registered trademarks by NIKOLI Co., Ltd. in Japan and some other countries.
-Other names for the puzzle, e.g. “ナンプレ”, “ナンバープレース”, “Number Place” may be trademarks of someone in somewhere on this planet. (I\'m not sure.)
+Other names of the same puzzle, e.g. “ナンプレ”, “ナンバープレース”, “Number Place” may be trademarks of someone in somewhere on this planet. I\'m not sure.
 </string>
 </resources>
