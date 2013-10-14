@@ -105,12 +105,20 @@ public class MainActivity extends Activity {
 
 		if (requestCode == REQ_CAPTURE && resultCode == RESULT_OK) {
 			Object obj = data.getSerializableExtra(K.EXTRA_PUZZLE_DATA);
-			// Hmm... It appears that a serialized byte[][] object ("[[B")
-			// is deserialized back as an Object[] containing byte[].
-			// I don't know why.  Anyway we need to live with it.
-			// Well, I have a slight feeling that the choice of byte[][]
-			// for puzzle data *was* not wise. XXX
-			onPuzzleCapture(toByteArrayArray(obj));
+			if (obj == null) {
+	    		Toast.makeText(getApplicationContext(), R.string.toast_text_recognition_failed, Toast.LENGTH_LONG).show();
+			} else {
+				// Hmm... It appears that a serialized byte[][] object ("[[B")
+				// is deserialized back as an Object[] containing byte[].
+				// I don't know why.  Anyway we need to live with it.
+				// Well, I have a slight feeling that the choice of byte[][]
+				// for puzzle data *was* not wise. XXX
+				onPuzzleCapture(toByteArrayArray(obj));
+			}
+		}
+
+		if (requestCode == REQ_CAPTURE && resultCode == RESULT_CANCELED) {
+    		Toast.makeText(getApplicationContext(), R.string.toast_text_recognition_cancelled, Toast.LENGTH_LONG).show();
 		}
 	}
 

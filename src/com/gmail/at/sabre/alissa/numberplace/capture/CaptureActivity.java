@@ -42,6 +42,7 @@ public class CaptureActivity extends Activity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+    	Log.i(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_capture);
 
@@ -122,6 +123,7 @@ public class CaptureActivity extends Activity {
 
 	@Override
 	protected void onResume() {
+    	Log.i(TAG, "onResume");
 		super.onResume();
 
 		// We have duplicate OpenCV initialization codes here and in MainActivity.  XXX
@@ -144,11 +146,12 @@ public class CaptureActivity extends Activity {
 	}
 
 	private void thread_onPuzzleRecognized(final byte[][] puzzle, Bitmap bitmap) {
+    	Log.i(TAG, puzzle == null ? "onPuzzleRecognized (puzzle == null)" : "onPuzzleRecognized (puzzle != null)");
 		mHandler.post(new Runnable() {
 			public void run() {
 				Intent result = new Intent();
 				result.putExtra(K.EXTRA_PUZZLE_DATA, puzzle);
-				setResult((puzzle == null) ? RESULT_CANCELED : RESULT_OK, result);
+				setResult(RESULT_OK, result);
 				finish();
 			}
 		});
@@ -156,8 +159,34 @@ public class CaptureActivity extends Activity {
 
 	@Override
 	protected void onDestroy() {
+    	Log.i(TAG, "onDestroy");
 		super.onDestroy();
 		mThread.quit();
 		mThread = null;
 	}
+
+	@Override
+	protected void onStart() {
+    	Log.i(TAG, "onStart");
+		super.onStart();
+	}
+
+	@Override
+	protected void onRestart() {
+    	Log.i(TAG, "onRestart");
+		super.onRestart();
+	}
+
+	@Override
+	protected void onPause() {
+    	Log.i(TAG, "onPause");
+		super.onPause();
+	}
+
+	@Override
+	protected void onStop() {
+    	Log.i(TAG, "onStop");
+		super.onStop();
+	}
+
 }

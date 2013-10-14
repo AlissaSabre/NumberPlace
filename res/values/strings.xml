@@ -10,6 +10,8 @@
     -->
     <string name="button_label_about">About...</string>
     <string name="toast_text_impossible">No solution found.</string>
+    <string name="toast_text_recognition_failed">Puzzle recognition failed.</string>
+    <string name="toast_text_recognition_cancelled">Puzzle recognition cancelled.</string>
 
     <string-array name="digits">
         <item></item>
