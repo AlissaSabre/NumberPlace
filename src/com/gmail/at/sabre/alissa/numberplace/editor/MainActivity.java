@@ -36,6 +36,8 @@ public class MainActivity extends Activity {
 	private PuzzleSolver mSolver;
 	private PuzzleEditorView mPuzzleEditor;
 
+	private boolean mToCheckOpenCV;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
@@ -58,27 +60,40 @@ public class MainActivity extends Activity {
 			}
 		});
 
-        findViewById(R.id.busy).setVisibility(View.INVISIBLE);
-
         mHandler = new Handler();
         mSolver = new PuzzleSolver();
         mPuzzleEditor = (PuzzleEditorView)findViewById(R.id.puzzleEditorView);
+
+        mToCheckOpenCV = true;
     }
+
+	@Override
+	protected void onStart() {
+        Log.i(TAG, "onStart");
+		super.onStart();
+        findViewById(R.id.busy).setVisibility(View.INVISIBLE);
+	}
 
 	@Override
     public void onSaveInstanceState(Bundle outState) {
     	super.onSaveInstanceState(outState);
     	mPuzzleEditor.saveState(outState);
+    	if (mToCheckOpenCV) {
+    		outState.putBoolean(getClass().getName() + ".toCheckOpenCV", true);
+    	}
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
     	super.onRestoreInstanceState(savedInstanceState);
     	mPuzzleEditor.restoreState(savedInstanceState);
+    	mToCheckOpenCV = savedInstanceState.getBoolean(getClass().getName() + ".toCheckOpenCV");
     }
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.i(TAG, "onActivityResult");
+
 		super.onActivityResult(requestCode, resultCode, data); // Is this unneeded?  FIXME
 
 		if (requestCode == REQ_CAMERA && resultCode == RESULT_OK) {
@@ -99,33 +114,65 @@ public class MainActivity extends Activity {
 		}
 	}
 
+    private static byte[][] toByteArrayArray(Object obj) {
+    	try {
+    		Object[] src = (Object[])obj;
+    		byte[][] dst = new byte[src.length][];
+    		for (int i = 0; i < src.length; i++) {
+    			dst[i] = (byte[])src[i];
+    		}
+    		return dst;
+    	} catch (ClassCastException e) {
+    		return null;
+    	}
+    }
+
 	@Override
 	protected void onResume() {
+        Log.i(TAG, "onResume");
 		super.onResume();
 
 		// This MainActivity doesn't need OpenCV library, but the initialization
 		// may pop up a dialog and may invoke Google Play App for downloading
 		// OpenCV stuff, so it's better the process to happen early.
-		Log.i(TAG, "start initializing OpenCV");
-		final Context appContext = this;
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, appContext, new BaseLoaderCallback(appContext) {
-			@Override
-			public void onManagerConnected(int status) {
-				if (status == SUCCESS) {
-					Log.i(TAG, "OpenCV initialization successful");
-				} else {
-					Log.w(TAG, "OpenCV initialization unsuccessful");
-					super.onManagerConnected(status);
+		//
+		// However, if the user don't want to install the OpenCV Manager
+		// but want to use basic features of this app (the solver),
+		// I think it's better to allow him/her to do so.
+		// Moreover, in the case, just one invitation is enough;
+		// showing a dialog to suggest installing OpenCV Manager every time
+		// this activity is resumed is a kind of a SPAM.
+		//
+		// Another thing is the delay.  On my test machine, OpenCVLoader.initAsync
+		// takes 200-400ms before calling back, even when the library is already
+		// installed and ready. The delay can be noticed by users.
+		// I don't want to make such delay unnecessarily.
+		//
+		// Oh, well! The OpenCV Manager document says something like:
+		// "if OpenCV library was not installed, it calls ACtivity.finish().
+		// to change the behaviour, override BaseLoaderCallback.finish()."
+		// However, the said BaseLoaderCallback.finish() is declared as package private,
+		// and it is not possible override in a clean ways...
+		//
+		// TODO: somehow take care of the case, outsmarting the OpenCV developers'
+		// ambitions to force people to use it! :-)
+		if (mToCheckOpenCV) {
+			Log.i(TAG, "start initializing OpenCV");
+			final Context appContext = this;
+	        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, appContext, new BaseLoaderCallback(appContext) {
+				@Override
+				public void onManagerConnected(int status) {
+					if (status == SUCCESS) {
+						Log.i(TAG, "OpenCV initialization successful");
+					} else {
+						Log.w(TAG, "OpenCV initialization unsuccessful");
+						super.onManagerConnected(status);
+					}
 				}
-			}
-		});
+			});
+	        mToCheckOpenCV = false;
+		}
 	}
-
-	@Override
-    public void onStop() {
-    	super.onStop();
-    	mSolver.stop();
-    }
 
     private void buttonCapture_onClick(View v) {
     	Intent request = new Intent(getApplicationContext(), CameraActivity.class);
@@ -183,16 +230,29 @@ public class MainActivity extends Activity {
     	startActivity(new Intent(getApplicationContext(), AboutActivity.class));
     }
 
-    private byte[][] toByteArrayArray(Object obj) {
-    	try {
-    		Object[] src = (Object[])obj;
-    		byte[][] dst = new byte[src.length][];
-    		for (int i = 0; i < src.length; i++) {
-    			dst[i] = (byte[])src[i];
-    		}
-    		return dst;
-    	} catch (ClassCastException e) {
-    		return null;
-    	}
+	@Override
+    public void onStop() {
+        Log.i(TAG, "onStop");
+    	super.onStop();
+    	mSolver.stop();
     }
+
+	@Override
+	protected void onRestart() {
+        Log.i(TAG, "onRestart");
+		super.onRestart();
+	}
+
+	@Override
+	protected void onPause() {
+        Log.i(TAG, "onPause");
+		super.onPause();
+	}
+
+	@Override
+	protected void onDestroy() {
+        Log.i(TAG, "onDestroy");
+		super.onDestroy();
+	}
+
 }

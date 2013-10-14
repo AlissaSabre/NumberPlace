@@ -11,6 +11,7 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -20,7 +21,7 @@ import com.gmail.at.sabre.alissa.numberplace.K;
 import com.gmail.at.sabre.alissa.numberplace.R;
 
 /***
- * An activity that use a camera to take a picture. This is similar to a camera
+ * An activity that use a camera hardware to take a picture. This is similar to a camera
  * application invoked through an intent action
  * {@link android.provider.MediaStore#ACTION_IMAGE_CAPTURE}, but its UI is far
  * simpler and the way it returns the taken photo in a different way.
@@ -46,9 +47,11 @@ import com.gmail.at.sabre.alissa.numberplace.R;
  */
 public class CameraActivity extends Activity implements SurfaceHolder.Callback, View.OnClickListener {
 
+	private static final String TAG = "numberplace..CameraActivity";
+
 	/***
 	 * The maximum size in pixels of the picture that this Activity takes. It
-	 * tries to take the largest picture among ones supported by the hardware
+	 * tries to take the largest picture that is supported by the hardware
 	 * and whose width and height don't exceed this maximum.
 	 */
 	private static final int MAX_SIZE = 1024;
@@ -77,8 +80,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
 	private SurfaceHolder mHolder;
 
-	private SurfaceView mView;
-
 	private View mContentView;
 
 	private Handler mHandler;
@@ -96,13 +97,13 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
 	@Override
     public void onCreate(Bundle savedInstanceState) {
+		Log.i(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
-        mView = (SurfaceView)findViewById(R.id.surfaceView);
         mContentView = findViewById(R.id.content_view);
 
-        mHolder = mView.getHolder();
+        mHolder = ((SurfaceView)findViewById(R.id.surfaceView)).getHolder();
         mHolder.addCallback(this);
         initHolder(mHolder);
 
@@ -119,6 +120,8 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
     }
 
 	public void surfaceCreated(final SurfaceHolder holder) {
+		Log.i(TAG, "surfaceCreated");
+
         mThread = new CameraThread();
         mThread.start();
 
@@ -193,6 +196,48 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		    			currentFocusMode.equals(Camera.Parameters.FOCUS_MODE_AUTO) ||
 		    			currentFocusMode.equals(Camera.Parameters.FOCUS_MODE_MACRO);
 
+		    	// Pass the decided preview size to UI thread so that it can
+		    	// resize the surface view appropriately.
+		    	final int pw = preview.width;
+				final int ph = preview.height;
+				mHandler.post(new Runnable() {
+					public void run() {
+						onPreviewSizeDecided(pw, ph);
+					}
+				});
+			}
+		});
+	}
+
+	private void onPreviewSizeDecided(final int pw, final int ph) {
+		Log.i(TAG, "onPreviewSizeDetected");
+
+		// Resize the surface view to have the same aspect ratio as
+		// the camera preview.
+		// Assuming it is now of its maximum size,
+		// reduce the length of one side to match the aspect ratio.
+		final SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceView);
+		final int vw = surfaceView.getWidth();
+		final int vh = surfaceView.getHeight();
+		final int nw, nh;
+		if (pw * vh > vw * ph) {
+			nw = vw;
+			nh = vw * ph / pw;
+		} else {
+			nw = vh * pw / ph;
+			nh = vh;
+		}
+		if (Math.abs(vw - nw) > 1 || Math.abs(vh - nh) > 1) {
+			final ViewGroup.LayoutParams layoutParams = surfaceView.getLayoutParams();
+	        layoutParams.width = nw;
+		    layoutParams.height = nh;
+		    surfaceView.setLayoutParams(layoutParams);
+		}
+
+		// We have the surface view resized properly.  Start camera preview now.
+		final SurfaceHolder holder = surfaceView.getHolder();
+		mThread.post(new Runnable() {
+			public void run() {
 				try {
 					mCamera.setPreviewDisplay(holder);
 				} catch (IOException e) {
@@ -200,47 +245,23 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 					// TODO: this event should be notified to user, too.
 					throw new RuntimeException("Can't preview camera", e);
 				}
-
-				// Resize the surface view to have the same aspect ratio as the camera preview.
-				final int pw = preview.width;
-				final int ph = preview.height;
-				mHandler.post(new Runnable() {
-					public void run() {
-						final int vw = mView.getWidth();
-						final int vh = mView.getHeight();
-						final int nw, nh;
-						if ((float)pw / ph > (float)vw / vh) {
-							nw = vw;
-							nh = vw * ph / pw;
-						} else {
-							nw = vh * pw / ph;
-							nh = vh;
-						}
-						if (Math.abs(vw - nw) > 1 || Math.abs(vh - nh) > 1) {
-							ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
-					        layoutParams.width = nw;
-						    layoutParams.height = nh;
-						    mView.setLayoutParams(layoutParams);
-						}
-					}
-				});
+				mCamera.startPreview();
 			}
 		});
-
 
 		mContentView.setOnClickListener(this);
 	}
 
 	public void surfaceChanged(final SurfaceHolder holder, final int format, final int width, final int height) {
-		mThread.post(new Runnable() {
-			public void run() {
-				mCamera.startPreview();
-			}
-		});
+		Log.i(TAG, "surfaceChanged");
+
+		// I'm surprised to find I have nothing to do here. It appears because
+		// the camera preview code takes care of everything we need to do when
+		// the surface is changed. Thank you, Google!
 	}
 
 	public void onClick(View v) {
-		mView.setOnClickListener(null);
+		mContentView.setOnClickListener(null);
 		final int rotation = getWindowManager().getDefaultDisplay().getRotation();
 
 		// Yes, the following spaghetti of callback is messy.  I know.
@@ -280,6 +301,8 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 	}
 
 	private void camera_onPictureTaken(final byte[] data, int rotation) {
+		Log.i(TAG, "camera_onPictureTaken");
+
 		Intent result = new Intent();
 		result.putExtra(K.EXTRA_IMAGE_DATA, data);
 		result.putExtra(K.EXTRA_DEVICE_ROTATION, rotation);
@@ -288,13 +311,25 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
     }
 
 	public void surfaceDestroyed(final SurfaceHolder holder) {
-		mView.setOnClickListener(null);
+		Log.i(TAG, "surfaceDestroyed");
+
+		mContentView.setOnClickListener(null);
 
 		mThread.post(new Runnable() {
 			public void run() {
-				mCamera.stopPreview();
-				mCamera.cancelAutoFocus();
-				mCamera.release();
+				// I'm not sure the following three consecutive try-catch blocks are really needed...
+				try {
+					mCamera.stopPreview();
+				} catch (Throwable e) {
+				}
+				try {
+					mCamera.cancelAutoFocus();
+				} catch (Throwable e) {
+				}
+				try {
+					mCamera.release();
+				} catch (Throwable e) {
+				}
 				mCamera = null;
 
 				mThread.quit();
@@ -332,4 +367,41 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 			return mHandler.post(r);
 		}
 	}
+
+	@Override
+	protected void onStart() {
+		Log.i(TAG, "onStart");
+		super.onStart();
+	}
+
+	@Override
+	protected void onRestart() {
+		Log.i(TAG, "onRestart");
+		super.onRestart();
+	}
+
+	@Override
+	protected void onResume() {
+		Log.i(TAG, "onResume");
+		super.onResume();
+	}
+
+	@Override
+	protected void onPause() {
+		Log.i(TAG, "onPause");
+		super.onPause();
+	}
+
+	@Override
+	protected void onStop() {
+		Log.i(TAG, "onStop");
+		super.onStop();
+	}
+
+	@Override
+	protected void onDestroy() {
+		Log.i(TAG, "onDestroy");
+		super.onDestroy();
+	}
+
 }
