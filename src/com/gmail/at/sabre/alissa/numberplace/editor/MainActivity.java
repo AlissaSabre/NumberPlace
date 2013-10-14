@@ -178,7 +178,7 @@ public class MainActivity extends Activity {
 					}
 				}
 			});
-	        mToCheckOpenCV = false;
+	        // mToCheckOpenCV = false;
 		}
 	}
 
