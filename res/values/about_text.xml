@@ -14,35 +14,35 @@ Please use it on your own risk.
 \n
 \nOpen Source Computer Vision Library for Android (OpenCV4Android), version 2.4.6,
 available through http://opencv.org 
-as http://sourceforge.net/projects/opencvlibrary/files/opencv-android/2.4.6/OpenCV-2.4.6-android-sdk-r2.zip/download, 
+as http://sourceforge.net/projects/opencvlibrary/files/opencv-android/2.4.6/OpenCV-2.4.6-android-sdk-r2.zip/download,
 distributed under the following license:
 \n
 \n  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
-\n  
+\n
 \n   By downloading, copying, installing or using the software you agree to this license.
 \n   If you do not agree to this license, do not download, install,
 \n   copy or use the software.
-\n  
+\n
 \n                            License Agreement
 \n                 For Open Source Computer Vision Library
-\n  
+\n
 \n  Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
 \n  Copyright (C) 2008-2011, Willow Garage Inc., all rights reserved.
 \n  Third party copyrights are property of their respective owners.
-\n  
+\n
 \n  Redistribution and use in source and binary forms, with or without modification,
 \n  are permitted provided that the following conditions are met:
-\n  
+\n
 \n    * Redistributions of source code must retain the above copyright notice,
 \n      this list of conditions and the following disclaimer.
-\n  
+\n
 \n    * Redistributions in binary form must reproduce the above copyright notice,
 \n      this list of conditions and the following disclaimer in the documentation
 \n      and/or other materials provided with the distribution.
-\n  
+\n
 \n    * The name of the copyright holders may not be used to endorse or promote products
 \n      derived from this software without specific prior written permission.
-\n  
+\n
 \n  This software is provided by the copyright holders and contributors "as is" and
 \n  any express or implied warranties, including, but not limited to, the implied
 \n  warranties of merchantability and fitness for a particular purpose are disclaimed.
@@ -64,7 +64,7 @@ the source code for which can be found at www.minisat.se,
 under the following permissive license:
 \n
 \n  MiniSat -- Copyright (c) 2003-2005, Niklas Een, Niklas Sorensson
-\n  
+\n
 \n  Permission is hereby granted, free of charge, to any person obtaining a
 \n  copy of this software and associated documentation files (the
 \n  "Software"), to deal in the Software without restriction, including
@@ -72,10 +72,10 @@ under the following permissive license:
 \n  distribute, sublicense, and/or sell copies of the Software, and to
 \n  permit persons to whom the Software is furnished to do so, subject to
 \n  the following conditions:
-\n  
+\n
 \n  The above copyright notice and this permission notice shall be included
 \n  in all copies or substantial portions of the Software.
-\n  
+\n
 \n  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 \n  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 \n  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND

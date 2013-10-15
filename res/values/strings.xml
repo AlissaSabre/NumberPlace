@@ -5,8 +5,8 @@
     <string name="button_label_solve">Solve</string>
     <string name="button_label_capture">Capture</string>
     <!--
-         Don't use &#8230; for the following "...".  
-    	 Otherwise, the label looks strangely on most of Japanese phones.
+         Don't use &#8230; for the following "...".
+         Otherwise, the label looks strangely on most of Japanese phones.
     -->
     <string name="button_label_about">About...</string>
     <string name="toast_text_impossible">No solution found.</string>
