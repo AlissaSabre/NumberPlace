@@ -1,8 +1,12 @@
 package com.gmail.at.sabre.alissa.numberplace.capture;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -12,6 +16,10 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.Bitmap.Config;
 
 import com.gmail.at.sabre.alissa.ocr.Ocr;
 
@@ -177,11 +185,19 @@ public class ImageProcessing {
 		// actual constant 16 is chosen by experiments.  (along with
 		// the offset constant 2.)  NOTE that we make the block size
 		// an odd number so that a block has a central pixel.
-		final int blockSize = (Math.min(src.width(), src.height()) / 16) | 1;
+		//
+		// My experiment was not enough.  Just before releasing 0.7,
+		// I needed to update the constants to 8 and 8 to cover wider
+		// range of devices...  Should I find a way to adjust these
+		// parameters automatically on the fly?  FIXME.
+		//
+		final int blockSize = (Math.min(src.width(), src.height()) / 8) | 1;
 		final Mat tmp = new Mat();
 		Imgproc.adaptiveThreshold(src, tmp, 255,
 				Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV,
-				blockSize, 2);
+				blockSize, 8);
+
+		debugDumpImage(tmp);
 
 		// Analyze blob shapes.  We use one of the detected contours
 		// (the outer contour of the puzzle board) to fit several
@@ -607,5 +623,25 @@ public class ImageProcessing {
 		}
 
 		return maxRect;
+	}
+
+	// Before using the debugDump, you need to add
+	// <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+	// on the AndroidManifest.xml
+
+	private static boolean mDebugDump = false;
+
+	private static void debugDumpImage(Mat tmp) {
+		if (!mDebugDump) return;
+
+		try {
+			//org.opencv.highgui.Highgui.imwrite("/sdcard/Download/debug.png", tmp);
+			final Bitmap bitmap = Bitmap.createBitmap(tmp.width(), tmp.height(), Config.ARGB_8888);
+			Utils.matToBitmap(tmp, bitmap);
+			final OutputStream stream = new FileOutputStream("/sdcard/Download/debug.png"); // XXX
+			final boolean ok = bitmap.compress(CompressFormat.PNG, 100, stream);
+			stream.close();
+		} catch (IOException e) {
+		}
 	}
 }

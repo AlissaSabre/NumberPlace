@@ -1,19 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gmail.at.sabre.alissa.numberplace"
     android:versionCode="2"
-    android:versionName="0.63" >
+    android:versionName="0.70" android:installLocation="auto">
 
     <uses-sdk
         android:minSdkVersion="8"
         android:targetSdkVersion="15" />
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-feature android:name="android.hardware.camera"/>
-    <uses-feature android:name="android.hardware.camera.autofocus"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
     <application
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme"
+        android:allowBackup="true" android:description="@string/app_description">
         <activity android:name=".editor.MainActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,11 +29,11 @@
             android:name=".capture.CameraActivity"
             android:label="@string/title_activity_camera"
             android:screenOrientation="landscape" android:theme="@style/AppTheme.Fullscreen" >
-        </activity>           
+        </activity>
         <activity
             android:name=".editor.AboutActivity"
             android:label="@string/title_activity_about" >
         </activity>
     </application>
-    
+
 </manifest>

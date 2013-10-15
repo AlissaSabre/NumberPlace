@@ -1,6 +1,7 @@
 <resources>
 
     <string name="app_name">Number Place Breaker</string>
+    <string name="app_description">Capture and solve Number Place puzzles</string>
     <string name="button_label_solve">Solve</string>
     <string name="button_label_capture">Capture</string>
     <!--
@@ -9,6 +10,8 @@
     -->
     <string name="button_label_about">About...</string>
     <string name="toast_text_impossible">No solution found.</string>
+    <string name="toast_text_recognition_failed">Puzzle recognition failed.</string>
+    <string name="toast_text_recognition_cancelled">Puzzle recognition cancelled.</string>
 
     <string-array name="digits">
         <item></item>
@@ -27,5 +30,6 @@
     <string name="title_activity_about">About Number Place Breaker</string>
     <string name="title_activity_capture">Recognize a Puzzle</string>
     <string name="title_activity_camera">Capture a Puzzle</string>
-
+    <string name="description_image_preview">Preview of the shot picture</string>
+    <string name="description_camera_preview">Camera preview; Touch here to take a picture of a puzzle</string>
 </resources>
