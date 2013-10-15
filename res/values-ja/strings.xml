@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">ナンプレ破り</string>
+    <string name="app_description">ナンプレの問題を撮影して解く</string>
+    <string name="button_label_solve">解く</string>
+    <string name="button_label_capture">撮影する</string>
+    <string name="button_label_about">情報</string>
+    <string name="toast_text_impossible">解けません</string>
+    <string name="toast_text_recognition_failed">ナンプレの問題を認識できませんでした</string>
+    <string name="toast_text_recognition_cancelled">キャンセルされました</string>
+    <string name="pad_label_clear">消す</string>
+    <string name="title_activity_about">ナンプレ破りの情報</string>
+    <string name="title_activity_capture">ナンプレを認識中</string>
+    <string name="title_activity_camera">ナンプレを撮影中</string>
+    <string name="description_image_preview">撮影した画像</string>
+    <string name="description_camera_preview">カメラのプレビュー; ナンプレの問題を撮影するには、ここにタッチしてください</string>
+</resources>
