@@ -27,6 +27,5 @@
     <string name="title_activity_about">About Number Place Breaker</string>
     <string name="title_activity_capture">Recognize a Puzzle</string>
     <string name="title_activity_camera">Capture a Puzzle</string>
-    <string name="description_shoot">Shoot a picture of a Number Place puzzle.</string>
 
 </resources>
