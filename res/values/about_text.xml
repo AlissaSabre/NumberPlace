@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-<string name="about_text">
+<resources xmlns:tools="http://schemas.android.com/tools">
+<string name="about_text" tools:ignore="TypographyDashes,TypographyOther">
 Number Place Breaker by Alissa Sabre
 \n
 \nNumber Place Breaker is written by Alissa Sabre (http://alissa-sabre.cocolog-nifty.com).
