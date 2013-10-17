@@ -2,5 +2,5 @@
 
     <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar" />
     <style name="AppTheme.Fullscreen" parent="android:Theme.Holo.NoActionBar.Fullscreen" />
-    
+
 </resources>
