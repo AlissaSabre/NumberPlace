@@ -83,7 +83,7 @@ public class CaptureActivity extends Activity {
         try {
             final InputStream is = getApplicationContext().getResources().openRawResource(R.raw.ocr_data);
             try {
-                return new Ocr(is);
+                return new Ocr(is, getApplicationContext().getCacheDir());
             } finally {
                 is.close();
             }

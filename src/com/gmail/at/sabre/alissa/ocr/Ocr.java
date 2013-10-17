@@ -1,5 +1,6 @@
 package com.gmail.at.sabre.alissa.ocr;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -52,13 +53,14 @@ public class Ocr {
      * Constructor used with {@link Builder}. {@link #mDecoder} will be set
      * later. FIXME!
      */
-    public Ocr(Params params) {
+    public Ocr(Params params, File tmpDir) {
         mThumbWidth = params.mThumbWidth;
         mThumbHeight = params.mThumbHeight;
         mThumbSize = new Size(params.mThumbWidth, params.mThumbHeight);
         mUseHist = params.mUseHist;
         mVecSize = featureVectorSize(params.mThumbWidth, params.mThumbHeight, params.mUseHist);
         mClassifier = getClassifier(params.mClassifier);
+        mClassifier.setTmpDir(tmpDir);
     }
 
     /***
@@ -67,7 +69,7 @@ public class Ocr {
      * @param istream
      * @throws IOException
      */
-    public Ocr(InputStream istream) throws IOException {
+    public Ocr(InputStream istream, File tmpDir) throws IOException {
         final ObjectInputStream ois = new ObjectInputStream(istream);
         if (ois.readInt() != MAGIC) throw new IllegalArgumentException("illegal magic number");
         mThumbWidth = ois.readInt();
@@ -77,6 +79,7 @@ public class Ocr {
         mVecSize = featureVectorSize(mThumbWidth, mThumbHeight, mUseHist);
         mDecoder = readDecoder(ois);
         mClassifier = getClassifier(ois.readUTF());
+        mClassifier.setTmpDir(tmpDir);
         mClassifier.load(ois);
     }
 
