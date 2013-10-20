@@ -193,7 +193,7 @@ public class ImageProcessing {
         final MatOfPoint best_contour = new MatOfPoint();
 
         for (int offset = 1; offset <= 15; offset += 2) {
-        	findContours(src, contours, hierarchy, offset);
+        	findContours(src, offset, contours, hierarchy);
         	final MatOfPoint[] candidates = chooseFrameContours(src.size(), contours, hierarchy);
         	for (int i = 0; i < candidates.length; i++) {
         		final double score = evaluateContourAsFrame(candidates[i]);
@@ -211,19 +211,21 @@ public class ImageProcessing {
     }
 
 	/***
-     * Perform a blob analysis on the source gray scale image and
-     * return their contours. This is just a wrapper around OpenCV
-     * Imgproc.findContours().
-     *
-     * @param src
-     *            A gray scale image for analysis. This image is not
-     *            modified.
-     * @param contours
-     *            List of contours to be filled upon return.
-     * @param hierarchy
-     *            List of hierarchy info to be filled upon return.
-     */
-    private static void findContours(Mat src, List<MatOfPoint> contours, Mat hierarchy, int offset) {
+	 * Perform a blob analysis on the source gray scale image and return their
+	 * contours. This is just a wrapper around OpenCV
+	 * {@link Imgproc#adaptiveThreshold(Mat, Mat, double, int, int, int, double)}
+	 * and {@link Imgproc#findContours(Mat, List, Mat, int, int)}.
+	 *
+	 * @param src
+	 *            A gray scale image for analysis. This image is not modified.
+	 * @param offset
+	 *            The offset (C parameter) to be used for adaptive thresholding.
+	 * @param contours
+	 *            List of contours to be filled upon return.
+	 * @param hierarchy
+	 *            List of hierarchy info to be filled upon return.
+	 */
+    private static void findContours(Mat src, int offset, List<MatOfPoint> contours, Mat hierarchy) {
 
         final Mat tmp = new Mat();
         Imgproc.adaptiveThreshold(src, tmp, 255,
@@ -400,18 +402,35 @@ public class ImageProcessing {
      *            bottom left corners in this order. This array is not modified.
      */
     private static void adjustPerspective(Mat src, Mat dst, Point[] quad) {
-        final Mat quadMat = new MatOfPoint2f(quad);
-        final Mat goalMat = new MatOfPoint2f(GOAL);
-        Mat transformer = Imgproc.getPerspectiveTransform(quadMat, goalMat);
+        // Before adjusting perspective, _normalize_ the source image based on the pixels inside quad.
+    	// Pixels outside quad may saturate, but it doesn't matter.
+    	// This process may enhance the quality of the resulting image.
+    	final Mat mask = Mat.zeros(src.size(), CvType.CV_8UC1);
+    	final MatOfPoint poly = new MatOfPoint(quad);
+    	Core.fillConvexPoly(mask, poly, new Scalar(255));
+    	Core.MinMaxLocResult minmax = Core.minMaxLoc(src, mask);
+    	poly.release();
+    	mask.release();
+    	final double alpha = 256 / (minmax.maxVal - minmax.minVal + 1);
+    	final double beta = -alpha * minmax.minVal;
+    	final Mat tmp = new Mat();
+    	src.convertTo(tmp, src.type(), alpha, beta);
 
-        Size size = new Size(UNIT * 11, UNIT * 11);
+    	// Now, prepare transformation matrix.
+    	final Mat quadMat = new MatOfPoint2f(quad);
+        final Mat goalMat = new MatOfPoint2f(GOAL);
+        final Mat transformer = Imgproc.getPerspectiveTransform(quadMat, goalMat);
+
+        // Warp!
+        final Size size = new Size(UNIT * 11, UNIT * 11);
         dst.create(size, src.type());
-        Imgproc.warpPerspective(src, dst, transformer, size,
+        Imgproc.warpPerspective(tmp, dst, transformer, size,
                 Imgproc.INTER_LINEAR, Imgproc.BORDER_REPLICATE, new Scalar(0));
 
         transformer.release();
         goalMat.release();
         quadMat.release();
+        tmp.release();
     }
 
     /***
@@ -543,6 +562,8 @@ public class ImageProcessing {
         // the cell will be (almost) empty after thresholding.
         final Mat tmp = new Mat();
         Imgproc.threshold(src, tmp, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
+    	mDebug.dump(src);
+    	mDebug.dump(tmp);
 
         // Run the blob analysis on the focused area to detect a blob
         // for the digit.
@@ -699,7 +720,7 @@ public class ImageProcessing {
     // <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     // on the AndroidManifest.xml
 
-    public static DebugDump mDebug = new DebugDumpEnabled();
+    public static DebugDump mDebug = new DebugDump();
 
 	public static class DebugDump {
     	public void dump(Mat image) {}
