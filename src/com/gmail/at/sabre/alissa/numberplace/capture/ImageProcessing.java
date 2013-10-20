@@ -6,11 +6,13 @@ import java.util.Date;
 import java.util.List;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
+import org.opencv.core.RotatedRect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -99,18 +101,10 @@ public class ImageProcessing {
         final Mat gray = new Mat();
         makeGrayImage(source, gray);
 
-        // Recognize blobs.
-        final List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-        final Mat hierarchy = new Mat();
-        findContours(gray, contours, hierarchy);
-
         // Find an outer contour that is most likely of the puzzle
         // frame.
-        MatOfPoint frame_contour = chooseFrameContour(gray.size(), contours, hierarchy);
+        MatOfPoint frame_contour = findFrameContour(gray);
         if (frame_contour == null) return false;
-
-        contours.clear();
-        hierarchy.release();
 
         // Fit the frame contour to a quadrangle
         final Point[] quad = QuadrangleFitter.fit(frame_contour);
@@ -166,6 +160,57 @@ public class ImageProcessing {
     }
 
     /***
+     * Given a gray scale image containing a puzzle board,
+     * locale the most likely puzzle board on the image and return its contour.
+     *
+     * @param src
+     * @return
+     */
+    private static MatOfPoint findFrameContour(final Mat src) {
+
+    	final List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        final Mat hierarchy = new Mat();
+
+        // We use adaptive thresholding, because the lighting is
+        // often not uniform on the puzzle picture.  (For example,
+        // upper left is very bright and right half is dark.)  The
+        // block size and offset are the key to get a good binary image.
+        // We use a fixed block size, 31, in this app.
+        // The value is chosen by experiments.
+        //
+        // The offset, on the other hand, needs to be adjusted for each image.
+        // (The best value appears depending even on the camera hardware;
+        // different cameras created very different images under the same
+        // conditions in my experiments and I couldn't find one fixed value
+        // that covers all.)
+        //
+        // We try several offset values,
+        // process the resulting images for frame contours,
+        // evaluate each candidate contour, and take the best one.
+        // The range of offsets to try is determined by experiments.
+
+        double max_score = 0;
+        final MatOfPoint best_contour = new MatOfPoint();
+
+        for (int offset = 1; offset <= 15; offset += 2) {
+        	findContours(src, contours, hierarchy, offset);
+        	final MatOfPoint[] candidates = chooseFrameContours(src.size(), contours, hierarchy);
+        	for (int i = 0; i < candidates.length; i++) {
+        		final double score = evaluateContourAsFrame(candidates[i]);
+        		if (score > max_score) {
+        			max_score = score;
+        			candidates[i].copyTo(best_contour); // XXX
+        		}
+        	}
+        	for (MatOfPoint m : contours) m.release();
+        	contours.clear();
+        }
+
+        hierarchy.release();
+        return best_contour.empty() ? null : best_contour;
+    }
+
+	/***
      * Perform a blob analysis on the source gray scale image and
      * return their contours. This is just a wrapper around OpenCV
      * Imgproc.findContours().
@@ -178,29 +223,12 @@ public class ImageProcessing {
      * @param hierarchy
      *            List of hierarchy info to be filled upon return.
      */
-    private static void findContours(Mat src, List<MatOfPoint> contours, Mat hierarchy) {
+    private static void findContours(Mat src, List<MatOfPoint> contours, Mat hierarchy, int offset) {
 
-        // We use adaptive thresholding, because the lighting is
-        // often not uniform on the puzzle picture.  (For example,
-        // upper left is very bright and right half is dark.)  The
-        // block size is a key to get a good binary image.  We use a
-        // block size proportional to the image size, that is expected
-        // to be similar size relative to the puzzle frame.  The
-        // actual constant 16 is chosen by experiments.  (along with
-        // the offset constant 2.)  NOTE that we make the block size
-        // an odd number so that a block has a central pixel.
-        //
-        // My experiment was not enough.  Just before releasing 0.7,
-        // I needed to update the constants to 8 and 8 to cover wider
-        // range of devices...  Should I find a way to adjust these
-        // parameters automatically on the fly?  FIXME.
-        //
-        final int blockSize = (Math.min(src.width(), src.height()) / 32) | 1;
         final Mat tmp = new Mat();
         Imgproc.adaptiveThreshold(src, tmp, 255,
                 Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV,
-                blockSize, 2);
-
+                31, offset);
         mDebug.dump(tmp);
 
         // Analyze blob shapes.  We use one of the detected contours
@@ -215,13 +243,18 @@ public class ImageProcessing {
         // fitting to a contour of CHAIN_APPROX_NONE and
         // CHAIN_APPROX_SIMPLE was very small, and I decided to use
         // CHAIN_APPROX_SIMPLE here.
+        //
+        // In this version, we repeat this process several times for an image.
+        // We also perform time-consuming processing on contours,
+        // such as polygon cover or convex hull analysis.
+        // We absolutely can't live with the full contour points.
         Imgproc.findContours(tmp, contours, hierarchy,
                 Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
         tmp.release();
     }
 
     /***
-     * Given a set of contours of blobs, find a blob that is most likely the
+     * Given a set of contours of blobs, find blobs that look as a
      * number place puzzle frame. We use two criteria: (1) the blob has at least
      * nine and at most 81 holes, and (2) the blob covers the center of the
      * image.
@@ -242,6 +275,8 @@ public class ImageProcessing {
      * puzzle magazine, for example, the page may show two or more number place
      * puzzles, and the picture will very likely contain parts of other puzzles.
      * The "covers center" criterion effectively eliminates them.
+     * An additional benefit of this test is we can eliminates large blobs
+     * partly surrounding the real puzzle board.
      *
      * @param image_size
      *            The size of the image where the contours are on.
@@ -250,11 +285,11 @@ public class ImageProcessing {
      * @param hierarchy
      *            The hierarchy info associated with the contours.
      * @return
-     *            The outer contour of the most likely puzzle frame.
+     *            Candidates of the outer contour of the puzzle frame.
      */
-    private static MatOfPoint chooseFrameContour(Size image_size, List<MatOfPoint> contours, Mat hierarchy) {
+    private static MatOfPoint[] chooseFrameContours(Size image_size, List<MatOfPoint> contours, Mat hierarchy) {
 
-        final List<Integer> candidates = new ArrayList<Integer>();
+        final List<MatOfPoint> candidates = new ArrayList<MatOfPoint>();
         final int[] hinfo = new int[4];
         final Point center = new Point(image_size.width / 2f, image_size.height / 2f);
 
@@ -277,32 +312,63 @@ public class ImageProcessing {
 
             // If this blob has too few or too many holes, it is not a
             // puzzle frame.  Reject it.
-            if (holes < 9 || holes > 81) {
-                continue;
-            }
+            if (holes < 9 || holes > 81) continue;
 
             // See if it covers the center of the original image.
-            // I want to use
-            // Imgproc.pointPolygonTest(contours.get(i), center, false)
-            // for the purpose, but it's hard to do so, because of the
-            // data type discrepancy...  Use of boundingRect is a
-            // cheap alternative.
-            if (Imgproc.boundingRect(contours.get(i)).contains(center)) {
-                candidates.add(i);
-            }
+            if (!Imgproc.boundingRect(contours.get(i)).contains(center)) continue;
+
+            // See if it _really_ covers the center.
+            if (pointPolygonTest(contours.get(i), center, false) < 0) continue;
+
+            // This appears a puzzle frame.
+            candidates.add(contours.get(i));
         }
 
-        // If we found no candidates, give up.
-        if (candidates.size() == 0) return null;
+        // Return an array of all candidates.
+        return candidates.toArray(new MatOfPoint[0]);
+    }
 
-        // If we have two or more candidates, always choose the first
-        // one, praying!  (Of course this is not a best tactics.  We
-        // could add more criteria, we could run the quad-fit for all
-        // remaining candidates before choosing and evaluate the
-        // fitness, or we could even try detecting digits for all
-        // candidate frames and evaluate biases of the digits from
-        // expected positions...  FIXME!)
-        return contours.get(candidates.get(0));
+    /***
+     * Evaluate how the given contour is likely of a puzzle frame.
+     * The return value is in range 0..1.  Larger value means more likely.
+     * <p>
+     * In this version, we use a ratio of areas of the contour itself
+     * and a covering (rotated) rectangle.
+     */
+    private static double evaluateContourAsFrame(final MatOfPoint contour) {
+    	final double contourArea = Imgproc.contourArea(contour);
+    	final RotatedRect rect = minAreaRect(contour);
+    	final double hullArea = rect.size.area();
+    	return contourArea / hullArea;
+	}
+
+    /***
+     * The {@link MatOfPoint} version of {@link Imgproc#pointPolygonTest(MatOfPoint2f, Point, boolean)}.
+     * BTW why Java binding of OpenCV lacks it,
+     * making Java programmers' live harder
+     * by making the function's typical use case of passing contours from findCountour complicated
+     * and slowing down the execution speed
+     * by effectively keeping java apps off from going through the integer only fast path...
+     */
+    private static double pointPolygonTest(final MatOfPoint contour, final Point point, final boolean measureDist) {
+        final MatOfPoint2f m = new MatOfPoint2f();
+        contour.convertTo(m, CvType.CV_32FC2);
+        final double result = Imgproc.pointPolygonTest(m, point, measureDist);
+        m.release();
+        return result;
+    }
+
+    /***
+     * The {@link MatOfPoint} version of {@link Imgproc#minAreaRect(MatOfPoint2f)}.
+     * Ditto.
+     * @see {@link #pointPolygonTest(MatOfPoint, Point, boolean)}
+     */
+    private static RotatedRect minAreaRect(final MatOfPoint contour) {
+        final MatOfPoint2f m = new MatOfPoint2f();
+        contour.convertTo(m, CvType.CV_32FC2);
+        final RotatedRect result = Imgproc.minAreaRect(m);
+        m.release();
+        return result;
     }
 
     /***
