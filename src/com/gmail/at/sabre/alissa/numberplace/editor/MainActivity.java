@@ -10,6 +10,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.gmail.at.sabre.alissa.numberplace.K;
@@ -65,6 +67,75 @@ public class MainActivity extends Activity {
         mPuzzleEditor = (PuzzleEditorView)findViewById(R.id.puzzleEditorView);
 
         mToCheckOpenCV = true;
+
+        // Buttons on our layout have both icon and text labels on them.
+        // The portrait layout requires approximately 345dp or wider screen,
+        // and possibly more under some non-English UI.
+        // I tried to reduce the design to 320dp,
+        // that is the guaranteed minimum width for all Android devices
+        // in any supported orientation,
+        // but I couldn't
+        // So, as a sort of a compromise,
+        // I wanted to fit the text in the tight space by suppressing icons
+        // when no enough space was available.
+        //
+        // 345 dp is just slightly above a normal screen but far below for large.
+        // I considered resource switching by "-large" qualifier is not optimal.
+        // Qualifying with explicit required width, say "-345dp" might work well
+        // on English UI, but will not under some translations.
+        // Although I have no plan to translate this app into hundreds of languages,
+        // I don't want to take such strategy as adding essentially same layout
+        // under a lot of "-lang-dp" qualifier pairs.
+        //
+        // What should we do, then?
+        //
+        // The following code is my solution.
+        // It starts with a UI with icons, and check whether it fits on the screen.
+        // If it didn't, the code removes the icons.
+        // The point is, the process is run on the fly;
+        // so that it can accommodate with any possible languages or other differences,
+        // e.g., system font changes.
+        // (Not all Android phones are sold with DroidSans installed.
+        // Moreover, there are some Android phones on the market
+        // that allows end users to switch system fonts among those with non identical font metrics.)
+        //
+        // You are free to call it an overkill. :-)
+
+        findViewById(R.id.buttons_bar).getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+			public boolean onPreDraw() {
+				boolean done;
+
+				// It appears that a button folds their text just after
+				// their first onPreDraw() calls.
+				// There seems no hook after the point before actual drawing.
+				// So, we too hook onPreDraw(), invoke buttons' by ourselves,
+				// and try again if they were not ready.
+	        	final Button capture = (Button)findViewById(R.id.button_capture);
+	        	final Button solve   = (Button)findViewById(R.id.button_solve  );
+	        	final Button about   = (Button)findViewById(R.id.button_about  );
+	        	done = capture.onPreDraw() & solve.onPreDraw() & about.onPreDraw();
+	        	if (!done) return done;
+
+	        	// OK.  All buttons are ready.
+	        	// Ask them whether both icons and texts fit in the available width.
+	        	done = capture.getLineCount() == 1 && solve.getLineCount() == 1 && about.getLineCount() == 1;
+		        if (!done) {
+		        	// Texts on one or more buttons didn't fit in a single line.
+		        	// Remove the button icons to make more space.
+		        	// Run the predraw hook again.
+		        	capture.setCompoundDrawables(null, null, null, null);
+		        	solve  .setCompoundDrawables(null, null, null, null);
+		        	about  .setCompoundDrawables(null, null, null, null);
+		        }
+
+		        // This is a one shot hook per layout construction.
+		        // We don't need to be called anymore unless configuration has changed,
+		        // and this activity was re-created.
+		        findViewById(R.id.buttons_bar).getViewTreeObserver().removeOnPreDrawListener(this);
+
+				return done;
+			}
+        });
     }
 
     @Override

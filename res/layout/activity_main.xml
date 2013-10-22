@@ -1,49 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/RelativeLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".editor.MainActivity" >
 
-    <Button
-        android:id="@+id/button_capture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginRight="18dp"
-        android:layout_marginTop="18dp"
-        android:text="@string/button_label_capture" />
-
-    <Button
-        android:id="@+id/button_solve"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@id/button_capture"
-        android:layout_alignParentRight="true"
-        android:layout_below="@+id/button_capture"
-        android:layout_marginRight="18dp"
-        android:text="@string/button_label_solve" />
-
-    <Button
-        android:id="@+id/button_about"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@id/button_capture"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="18dp"
-        android:layout_marginRight="18dp"
-        android:text="@string/button_label_about" />
-
     <com.gmail.at.sabre.alissa.numberplace.editor.PuzzleEditorView
         android:id="@+id/puzzleEditorView"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:layout_toLeftOf="@+id/button_capture"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/buttons_bar"
         app:fixedDigitColor="#000"
         app:focusBorderColor="#F00"
         app:focusBorderWidth="4dp"
@@ -52,6 +21,45 @@
         app:minorBorderColor="#444"
         app:minorBorderWidth="0dp"
         app:solutionColor="#66F" />
+
+    <LinearLayout
+        android:id="@+id/buttons_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:paddingTop="@dimen/padding_small"
+        android:paddingBottom="@dimen/padding_small"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/button_capture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@android:drawable/ic_menu_camera"
+            android:text="@string/button_label_capture" />
+
+        <Button
+            android:id="@+id/button_solve"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@android:drawable/ic_menu_edit"
+            android:text="@string/button_label_solve" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/button_about"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:drawableLeft="@android:drawable/ic_menu_info_details"
+            android:text="@string/button_label_about" />
+
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/busy"
