@@ -4,6 +4,7 @@ import org.opencv.android.InstallCallbackInterface;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -31,15 +32,15 @@ public class OpenCVInitializer {
 	 * This constructor must be called by the UI thread.
 	 *
 	 * @param context
-	 *            The Application context.
+	 *            The Activity that uses OpenCV.
 	 * @param name
 	 *            The localized name of the application to be presented to the user that needs OpenCV.
 	 * @param version
 	 *            The version of OpenCV library that the application want to use.
 	 *            It should be one of the constants defined in {@link OpenCVLoader} as {@code OPENCV_VERSION_*}.
 	 */
-	public OpenCVInitializer(final Context context, final String version) {
-		mContext = context;
+	public OpenCVInitializer(final Activity activity, final String version) {
+		mContext = activity; // XXX
 		mVersion = version;
 		mHandler = new Handler();
 	}
@@ -55,17 +56,26 @@ public class OpenCVInitializer {
 	 *            initialized and is ready for use.
 	 * @param failure
 	 *            Run by the UI thread when the library is not initialized,
-	 *            e.g. because OpenCV is not installed on the device.
+	 *            e.g. because OpenCV is not installed on the device, and
+	 *            the user didn't want to install it.
+	 *            The application is expected to disable its OpenCV dependent
+	 *            features if this happens.
+	 *            Or, it may call {@link #initialize(Runnable, Runnable)} again
+	 *            if it needs to use OpenCV.
 	 *            This callback is invoked after the user is guided to the
 	 *            OpenCV download page.
-	 *            The application needs to call {@link #initialize(Runnable, Runnable)} again
-	 *            before using OpenCV.
-	 *            (Or, the application can disable features that require OpenCV.)
+	 * @param pending
+	 *            Run by the UI thread when the library is not initialized
+	 *            yet but may be soon.
+	 *            The application is expected to call
+	 *            {@link #initialize(Runnable, Runnable, Runnable)} again.
+	 *            This happens when OpenCV is not installed on the device,
+	 *            and the user has not explicitly declined to install it.
 	 */
-	public void initialize(final Runnable success, final Runnable failure) {
+	public void initialize(final Runnable success, final Runnable failure, final Runnable pending) {
 		mHandler.post(new Runnable() {
 			public void run() {
-				OpenCVLoader.initAsync(mVersion, mContext, new Callback(success, failure));
+				OpenCVLoader.initAsync(mVersion, mContext, new Callback(success, failure, pending));
 			}
 		});
 	}
@@ -80,9 +90,12 @@ public class OpenCVInitializer {
 
 		private final Runnable mFailure;
 
-		public Callback(final Runnable success, final Runnable failure) {
+		private final Runnable mPending;
+
+		public Callback(final Runnable success, final Runnable failure, final Runnable pending) {
 			mSuccess = success == null ? EMPTY_RUNNABLE : success;
 			mFailure = failure == null ? EMPTY_RUNNABLE : failure;
+			mPending = pending == null ? EMPTY_RUNNABLE : pending;
 		}
 
 		public void onPackageInstall(final int operation, final InstallCallbackInterface callback) {
@@ -164,24 +177,30 @@ public class OpenCVInitializer {
 
 		private void suggestInstallation() {
 			mHandler.post(new Runnable() {
+				private boolean mActionPosted = false;
 				public void run() {
 					final AlertDialog dialog = new AlertDialog.Builder(mContext)
 						.setMessage(R.string.opencv_install)
 						.setPositiveButton(R.string.opencv_go, new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int which) {
 								goForDownloading();
-								// Even if the user chose downloading,
-								// we invoke mFailure through onDismiss below,
-								// so that the app doesn't block.
+								mHandler.post(mPending);
+								mActionPosted = true;
 								dialog.dismiss(); // XXX
 							}
 						})
-						.setNegativeButton(R.string.opencv_cancel, null)
+						.setNegativeButton(R.string.opencv_cancel, new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								mHandler.post(mFailure);
+								mActionPosted = true;
+								dialog.dismiss(); // XXX
+							}
+						})
 						.create();
 					dialog
 						.setOnDismissListener(new DialogInterface.OnDismissListener() {
 							public void onDismiss(DialogInterface dialog) {
-								mHandler.post(mFailure);
+								if (!mActionPosted) mHandler.post(mPending);
 								dialog.dismiss(); // XXX
 							}
 						});

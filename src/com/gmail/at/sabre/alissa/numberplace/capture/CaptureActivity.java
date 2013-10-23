@@ -3,11 +3,9 @@ package com.gmail.at.sabre.alissa.numberplace.capture;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.OpenCVLoader;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -20,14 +18,16 @@ import android.widget.ImageView;
 
 import com.gmail.at.sabre.alissa.numberplace.K;
 import com.gmail.at.sabre.alissa.numberplace.R;
+import com.gmail.at.sabre.alissa.numberplace.editor.OpenCVInitializer;
 import com.gmail.at.sabre.alissa.ocr.Ocr;
 
 /**
  * An activity to run a separate thread to recognize a puzzle board on a
  * picture. From the UI perspective, the only appearance of this activity is to
  * show an indeterminate progress bar (a rounding circle) until the puzzle
- * recognition is complete. :-) It usually takes several seconds unless the CPU
- * is too slow.
+ * recognition is complete. :-) It usually takes several seconds.
+ *
+ * The real job is done by the {@link CaptureWorkerThread}.
  *
  * @author alissa
  *
@@ -39,6 +39,8 @@ public class CaptureActivity extends Activity {
     private Handler mHandler;
 
     private CaptureWorkerThread mThread;
+
+    private OpenCVInitializer mOpenCVInit;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -77,6 +79,8 @@ public class CaptureActivity extends Activity {
                 thread_onPuzzleRecognized(puzzle, bitmap);
             }
         });
+
+        mOpenCVInit = new OpenCVInitializer(this, OpenCVLoader.OPENCV_VERSION_2_4_6);
     }
 
     private Ocr prepareOcr() {
@@ -126,23 +130,39 @@ public class CaptureActivity extends Activity {
         Log.i(TAG, "onResume");
         super.onResume();
 
-        // We have duplicate OpenCV initialization codes here and in MainActivity.  XXX
-        // Also, we need to show a more user friendly dialog than those of OpenCV library default.  XXX
-        Log.i(TAG, "start initializing OpenCV");
-        final Context appContext = this;
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, appContext, new BaseLoaderCallback(appContext) {
-            @Override
-            public void onManagerConnected(int status) {
-                if (status == SUCCESS) {
-                    Log.i(TAG, "OpenCV initialization successful");
-                    mThread.startWorking();
-                } else {
-                    Log.w(TAG, "OpenCV initialization unsuccessful");
-                    super.onManagerConnected(status);
-                    finish();
-                }
-            }
-        });
+        // Initialize OpenCV library.
+        // This CaptureActivity is only started by MainActivity for the moment,
+        // and the two activity always run in a same process.
+        // So, we usually success immediately,
+        // because OpenCV has already been initialized in the MainActivity.
+        // However, there are some unusual situation;
+        // For example,
+        // a user can press a HOME button before CaptureWorkerThread
+        // completes its job.
+        // The thread is then discarded and will be started when the user
+        // raised NPB app.
+        // What happens if the user, after pressing the HOME button and
+        // before raising NPB, went to "Manage Application" page and uninstalled
+        // OpenCV Manager...
+        // I believe we should avoid crushing even in such an extraordinary case.
+        // The following code gracefully finishes the activity in the case.
+        mOpenCVInit.initialize(
+        	new Runnable() {
+				public void run() {
+					mThread.startWorking();
+				}
+			},
+			new Runnable() {
+				public void run() {
+					finish();
+				}
+			},
+			new Runnable() {
+				public void run() {
+					finish();
+				}
+			}
+		);
     }
 
     private void thread_onPuzzleRecognized(final byte[][] puzzle, Bitmap bitmap) {

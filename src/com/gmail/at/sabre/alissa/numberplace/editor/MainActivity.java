@@ -1,10 +1,8 @@
 package com.gmail.at.sabre.alissa.numberplace.editor;
 
-import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.OpenCVLoader;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -38,7 +36,8 @@ public class MainActivity extends Activity {
     private PuzzleSolver mSolver;
     private PuzzleEditorView mPuzzleEditor;
 
-    private boolean mToCheckOpenCV;
+    private boolean mOpenCVIgnore;
+    private OpenCVInitializer mOpenCVInit;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -66,7 +65,11 @@ public class MainActivity extends Activity {
         mSolver = new PuzzleSolver();
         mPuzzleEditor = (PuzzleEditorView)findViewById(R.id.puzzleEditorView);
 
-        mToCheckOpenCV = true;
+        mOpenCVIgnore = false;
+        mOpenCVInit = new OpenCVInitializer(this, OpenCVLoader.OPENCV_VERSION_2_4_6);
+
+        // Disable the Capture button until OpenCV is ready.
+        findViewById(R.id.button_capture).setEnabled(false);
 
         // Buttons on our layout have both icon and text labels on them.
         // The portrait layout requires approximately 345dp or wider screen,
@@ -149,16 +152,14 @@ public class MainActivity extends Activity {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         mPuzzleEditor.saveState(outState);
-        if (mToCheckOpenCV) {
-            outState.putBoolean(getClass().getName() + ".toCheckOpenCV", true);
-        }
+        outState.putBoolean(getClass().getName() + ".mOpenCVIgnore", true);
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mPuzzleEditor.restoreState(savedInstanceState);
-        mToCheckOpenCV = savedInstanceState.getBoolean(getClass().getName() + ".toCheckOpenCV");
+        mOpenCVIgnore = savedInstanceState.getBoolean(getClass().getName() + ".mOpenCVIgnore");
     }
 
     @Override
@@ -222,34 +223,31 @@ public class MainActivity extends Activity {
         // showing a dialog to suggest installing OpenCV Manager every time
         // this activity is resumed is a kind of a SPAM.
         //
-        // Another thing is the delay.  On my test machine, OpenCVLoader.initAsync
-        // takes 200-400ms before calling back, even when the library is already
-        // installed and ready. The delay can be noticed by users.
-        // I don't want to make such delay unnecessarily.
-        //
-        // Oh, well! The OpenCV Manager document says something like:
-        // "if OpenCV library was not installed, it calls ACtivity.finish().
-        // to change the behaviour, override BaseLoaderCallback.finish()."
-        // However, the said BaseLoaderCallback.finish() is declared as package private,
-        // and it is not possible override in a clean ways...
-        //
-        // TODO: somehow take care of the case, outsmarting the OpenCV developers'
-        // ambitions to force people to use it! :-)
-        if (mToCheckOpenCV) {
-            Log.i(TAG, "start initializing OpenCV");
-            final Context appContext = this;
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, appContext, new BaseLoaderCallback(appContext) {
-                @Override
-                public void onManagerConnected(int status) {
-                    if (status == SUCCESS) {
-                        Log.i(TAG, "OpenCV initialization successful");
-                    } else {
-                        Log.w(TAG, "OpenCV initialization unsuccessful");
-                        super.onManagerConnected(status);
-                    }
-                }
-            });
-            // mToCheckOpenCV = false;
+        if (!mOpenCVIgnore) {
+
+        	mOpenCVInit.initialize(
+    			new Runnable() {
+					public void run() {
+						// When initialized successfully.
+						// Enable the capture button.
+						findViewById(R.id.button_capture).setEnabled(true);
+					}
+				},
+				new Runnable() {
+					public void run() {
+						// When use of OpenCV was declined by user.
+						// Set a flag so that the user will not see the same dialog in this session.
+						findViewById(R.id.button_capture).setEnabled(false);
+						mOpenCVIgnore = true;
+					}
+				},
+				new Runnable() {
+					public void run() {
+						// When initialization is not yet complete.
+						findViewById(R.id.button_capture).setEnabled(false);
+					}
+				}
+        	);
         }
     }
 
