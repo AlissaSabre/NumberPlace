@@ -4,13 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".editor.MainActivity"  >
+    tools:context=".editor.MainActivity" >
 
     <com.gmail.at.sabre.alissa.numberplace.editor.PuzzleEditorView
         android:id="@+id/puzzleEditorView"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/button_capture"
+        android:layout_above="@+id/buttons_bar"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         app:fixedDigitColor="#000"
@@ -22,34 +22,42 @@
         app:minorBorderWidth="0dp"
         app:solutionColor="#66F" />
 
-    <Button
-        android:id="@+id/button_capture"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/buttons_bar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="18dp"
-        android:layout_marginBottom="18dp"
-        android:text="@string/button_label_capture" />
+        android:layout_centerHorizontal="true"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
 
-    <Button
-        android:id="@+id/button_solve"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/button_capture"
-        android:layout_marginBottom="18dp"
-        android:text="@string/button_label_solve" />
+        <!-- The layout of the following buttons are adjusted on the fly.
+             Read MainActivity.java before modify them.  -->
 
-    <Button
-        android:id="@+id/button_about"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="18dp"
-        android:layout_marginRight="18dp"
-        android:text="@string/button_label_about" />
+        <Button
+            android:id="@+id/button_capture"
+            android:layout_width="115dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:drawableLeft="@android:drawable/ic_menu_camera"
+            android:text="@string/button_label_capture" />
+
+        <Button
+            android:id="@+id/button_solve"
+            android:layout_width="115dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:drawableLeft="@android:drawable/ic_menu_edit"
+            android:text="@string/button_label_solve" />
+
+        <Button
+            android:id="@+id/button_about"
+            android:layout_width="115dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:drawableLeft="@android:drawable/ic_menu_info_details"
+            android:text="@string/button_label_about" />
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/busy"
