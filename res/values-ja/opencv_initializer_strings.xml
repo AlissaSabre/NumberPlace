@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="opencv_failure">OpenCVの初期化に失敗しました。撮影機能は動作しません。</string>
+    <string name="opencv_title">OpenCV Managerのダウンロード</string>
+    <string name="opencv_install">問題を撮影するために別のアプリ「OpenCV Manager」が必要です。これはGoogle Playで無料配布されています。ダウンロードページに移動しますか?</string>
+    <string name="opencv_ok">OK</string>
+    <string name="opencv_cancel">キャンセル</string>
+    <string name="opencv_go">移動する</string>
+
+</resources>
