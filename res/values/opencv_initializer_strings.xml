@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="opencv_failure">Initialization of OpenCV failed. Capture is unavailable.</string>
+    <string name="opencv_title">Download OpenCV Manager?</string>
     <string name="opencv_install">This app requires another app &quot;OpenCV Manager&quot; to capture a puzzle. It is available on Google Play for free. Do you want to visit the download page?</string>
     <string name="opencv_ok">OK</string>
     <string name="opencv_cancel">Cancel</string>

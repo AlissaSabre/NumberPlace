@@ -219,6 +219,7 @@ public class OpenCVInitializer {
 				private boolean mActionPosted = false;
 				public void run() {
 					final AlertDialog dialog = new AlertDialog.Builder(mContext)
+						.setTitle(R.string.opencv_title)
 						.setMessage(R.string.opencv_install)
 						.setPositiveButton(R.string.opencv_go, new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int which) {
