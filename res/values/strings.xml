@@ -9,7 +9,7 @@
     <string name="toast_text_recognition_failed">Puzzle recognition failed.</string>
     <string name="toast_text_recognition_cancelled">Puzzle recognition cancelled.</string>
 
-    <string-array name="digits">
+    <string-array name="digits" tools:ignore="MissingTranslation">
         <item></item>
         <item>1</item>
         <item>2</item>
