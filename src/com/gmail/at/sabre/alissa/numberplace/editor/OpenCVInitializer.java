@@ -3,6 +3,7 @@ package com.gmail.at.sabre.alissa.numberplace.editor;
 import org.opencv.android.InstallCallbackInterface;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -47,9 +48,26 @@ public class OpenCVInitializer {
 
 	/***
 	 * Initialize OpenCV library.
-	 * If OpenCV Manager is no installed on the device,
-	 * guide the user to Google Play for download after confirmation.
-	 * This method may be called by any thread.
+	 * This method returns soon, and one of the specified actions will be run later.
+	 * <p>
+	 * If OpenCV Manager is installed on the device,
+	 * it initializes the OpenCV library
+	 * and runs {@code success} action when the library is ready.
+	 * No user interaction takes place in this case.
+	 * <p>
+	 * If OpenCV Manager is not installed on the device,
+	 * it prompts the user to go to the download page.
+	 * If the user declined, it runs {@code failure} action.
+	 * Otherwise, i.e., the user followed the prompt,
+	 * it runs {@code pending} action before the user completes installation.
+	 * <p>
+	 * The {@code pending} action may be run under other circumstances,
+	 * e.g., the user dismissed the prompt, by pressing a BACK button,
+	 * not answering the question,
+	 * or the process was interrupted by some temporary failure such as
+	 * low system resources.
+	 * Consider the {@code pending} is an indication of
+	 * "Please try again later."
 	 *
 	 * @param success
 	 *            Run by the UI thread when the library is successfully
@@ -62,8 +80,6 @@ public class OpenCVInitializer {
 	 *            features if this happens.
 	 *            Or, it may call {@link #initialize(Runnable, Runnable)} again
 	 *            if it needs to use OpenCV.
-	 *            This callback is invoked after the user is guided to the
-	 *            OpenCV download page.
 	 * @param pending
 	 *            Run by the UI thread when the library is not initialized
 	 *            yet but may be soon.
@@ -73,11 +89,25 @@ public class OpenCVInitializer {
 	 *            and the user has not explicitly declined to install it.
 	 */
 	public void initialize(final Runnable success, final Runnable failure, final Runnable pending) {
-		mHandler.post(new Runnable() {
-			public void run() {
-				OpenCVLoader.initAsync(mVersion, mContext, new Callback(success, failure, pending));
-			}
-		});
+		try {
+
+			// Try calling a benign OpenCV native function.
+			// If it works, it means the OpenCV library is already initialized and ready.
+			// In that case, immediately post the success action
+			// to avoid the overhead of full initialization.
+			Core.getBuildInformation();
+			mHandler.post(success);
+
+		} catch (UnsatisfiedLinkError e) {
+
+			// The VM throws an UnsatisfiedLinkError when OpenCV native library is not loaded yet.
+			// We need to perform the full initialization if it happened.
+			mHandler.post(new Runnable() {
+				public void run() {
+					OpenCVLoader.initAsync(mVersion, mContext, new Callback(success, failure, pending));
+				}
+			});
+		}
 	}
 
 	private static final Runnable EMPTY_RUNNABLE = new Runnable() {
@@ -201,6 +231,7 @@ public class OpenCVInitializer {
 						.setOnDismissListener(new DialogInterface.OnDismissListener() {
 							public void onDismiss(DialogInterface dialog) {
 								if (!mActionPosted) mHandler.post(mPending);
+								mActionPosted = true;
 								dialog.dismiss(); // XXX
 							}
 						});

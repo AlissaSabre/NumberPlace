@@ -68,9 +68,6 @@ public class MainActivity extends Activity {
         mOpenCVIgnore = false;
         mOpenCVInit = new OpenCVInitializer(this, OpenCVLoader.OPENCV_VERSION_2_4_6);
 
-        // Disable the Capture button until OpenCV is ready.
-        findViewById(R.id.button_capture).setEnabled(false);
-
         // Buttons on our layout have both icon and text labels on them.
         // The portrait layout requires approximately 345dp or wider screen,
         // and possibly more under some non-English UI.
@@ -224,36 +221,32 @@ public class MainActivity extends Activity {
         // this activity is resumed is a kind of a SPAM.
         //
         if (!mOpenCVIgnore) {
-
         	mOpenCVInit.initialize(
-    			new Runnable() {
-					public void run() {
-						// When initialized successfully.
-						// Enable the capture button.
-						findViewById(R.id.button_capture).setEnabled(true);
-					}
-				},
+        		null,
 				new Runnable() {
 					public void run() {
 						// When use of OpenCV was declined by user.
-						// Set a flag so that the user will not see the same dialog in this session.
-						findViewById(R.id.button_capture).setEnabled(false);
+						// Set a flag to skip this process,
+						// so that the user will not see the same dialog in this session.
 						mOpenCVIgnore = true;
 					}
 				},
-				new Runnable() {
-					public void run() {
-						// When initialization is not yet complete.
-						findViewById(R.id.button_capture).setEnabled(false);
-					}
-				}
+				null
         	);
         }
     }
 
     private void buttonCapture_onClick(View v) {
-        Intent request = new Intent(getApplicationContext(), CameraActivity.class);
-        startActivityForResult(request, REQ_CAMERA);
+       	mOpenCVInit.initialize(
+			new Runnable() {
+				public void run() {
+			    	Intent request = new Intent(getApplicationContext(), CameraActivity.class);
+			        startActivityForResult(request, REQ_CAMERA);
+				}
+			},
+			null,
+			null
+		);
     }
 
     private void onPuzzleCapture(byte[][] puzzle) {
