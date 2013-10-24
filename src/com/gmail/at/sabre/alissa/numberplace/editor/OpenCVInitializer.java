@@ -49,6 +49,7 @@ public class OpenCVInitializer {
 	/***
 	 * Initialize OpenCV library.
 	 * This method returns soon, and one of the specified actions will be run later.
+	 * One, two, or all three actions may be null.
 	 * <p>
 	 * If OpenCV Manager is installed on the device,
 	 * it initializes the OpenCV library
@@ -110,10 +111,18 @@ public class OpenCVInitializer {
 		}
 	}
 
+	/***
+	 * An instance of {@link Runnable} that does nothing when run.
+	 */
 	private static final Runnable EMPTY_RUNNABLE = new Runnable() {
 		public void run() {}
 	};
 
+	/***
+	 * The loader callback.
+	 * We don't subclass {@link org.opencv.android.BaseLoaderCallback} and write our own.
+	 * @author alissa
+	 */
 	private class Callback implements LoaderCallbackInterface {
 
 		private final Runnable mSuccess;
