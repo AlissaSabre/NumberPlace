@@ -2,7 +2,7 @@
     <string name="app_name">ナンプレ破り</string>
     <string name="app_description">ナンプレの問題を撮影して解く</string>
     <string name="button_label_solve">解く</string>
-    <string name="button_label_capture">撮影する</string>
+    <string name="button_label_capture">撮影</string>
     <string name="button_label_about">情報</string>
     <string name="toast_text_impossible">解けません</string>
     <string name="toast_text_recognition_failed">ナンプレの問題を認識できませんでした</string>
