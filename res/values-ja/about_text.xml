@@ -1,12 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 <string name="about_text" tools:ignore="TypographyDashes,TypographyOther">
-\nこのアプリ「ナンプレ破り」はAlissa Sabre (http://alissa-sabre.cocolog-nifty.com) が作りました。
-これは実用的なアプリではなく、単なる実験またはアイディア確認です。
+\n「ナンプレ破り」は、ナンバープレース（ナンプレ、数独などとも呼ばれるパズル）の問題をカメラで撮影し、自動的に解くアプリです。
+これは実用的なアプリではありません。単なる実験またはアイディア確認とお考えください。
+また、このアプリは正しく動作する保証もありません。
 ご自身の責任でお使いください。
-\nこのアプリのパズルを解く部分は、 http://bach.istc.kobe-u.ac.jp/copris/puzzles/ に掲載されている田村直之先生の素晴らしい記事にインスパイアされたものです。
 \n
 \nこのプログラムの完全なソースコードは、Githubにあり、 http://github.com/AlissaSabre/NumberPlace から入手可能です。
+\n
+\n使い方
+\n
+\n1. [撮影]にタッチしてカメラを起動します。
+\n
+\n2. 画面のどこかにタッチして、ナンバープレースの問題を撮影します。
+\n
+\n3. 読み込まれた問題を確認してください。間違いがあるかもしれません。間違っている部分にタッチすると訂正できます。
+\n
+\n4. [解く]にタッチすると、問題を解いて答えを表示します。
+\n
+\nOpenCV Managerについて
+\n
+\nこのアプリは、別の方が作った「OpenCV Manager」というアプリを利用して内部の画像認識処理を行います。
+OpenCV Managerは、Google Playから無料でダウンロードできます。
+OpenCV Managerが必要なときにはメッセージが出ます。
+撮影機能を利用するためには、OpenCV Managerをインストールしてください。
+OpenCV Managerをインストールしないと、撮影機能は動作しません。
+\n
+\n作者など
+\n
+\nこのアプリ「ナンプレ破り」はAlissa Sabre (http://alissa-sabre.cocolog-nifty.com) が作りました。
+\n
+\nこのアプリのパズルを解く部分は、 http://bach.istc.kobe-u.ac.jp/copris/puzzles/ に掲載されている田村直之先生の素晴らしい記事にインスパイアされたものです。
 \n
 \nこのプログラムは、以下のオープンソースプロジェクトの成果を使用しており、成果物の一部または全部を含んでいるかもしれません。
 \n
@@ -82,7 +106,7 @@ under the following permissive license:
 \n  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 \n  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 \n
-\n「数独」 や「Sudoku」 は、株式会社ニコリの、日本および他の国における登録商標のようです。
-同じパズルを意味するその他の名前、例えば「ナンプレ」「ナンバープレース」「Number Place」などは、どこかの国や地域における誰かの商標かもしれません。よく知りません。
+\n「数独」 や「Sudoku」 は、株式会社ニコリの日本および他の国における登録商標のようです。
+同じパズルを意味するその他の名前、例えば「ナンプレ」「ナンバープレース」「Number Place」などは、どこかの国や地域における誰かの商標なのかもしれません。
 </string>
 </resources>
