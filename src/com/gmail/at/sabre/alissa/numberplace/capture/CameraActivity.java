@@ -123,7 +123,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		        }
 
 		        // We have the surface view resized properly.  Start camera preview now.
-		        final SurfaceHolder holder = surfaceView.getHolder();
 		        mCameraThread.startPreview();
 		        mContentView.setOnClickListener(CameraActivity.this);
 			}

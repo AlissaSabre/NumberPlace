@@ -67,6 +67,7 @@ public class CameraThread extends HandlerThread {
     @Override
     public synchronized void start() {
         super.start();
+        // Note this method is run by another thread.
         mHandler = new Handler(getLooper());
     }
 
@@ -107,6 +108,7 @@ public class CameraThread extends HandlerThread {
                 optimal = size;
             }
         }
+
         // If no such size is available, i.e., if all supported sizes
         // exceeded the app's maximum, use the minimum one as a fall back.
         if (optimal == ZERO) {
@@ -207,7 +209,7 @@ public class CameraThread extends HandlerThread {
     private void focus_Impl() {
     	if (mAutoFocusRequired) {
     		mCamera.autoFocus(new Camera.AutoFocusCallback() {
-				public void onAutoFocus(boolean success, Camera camera) {
+				public void onAutoFocus(final boolean success, final Camera camera) {
 				}
 			});
     	}
@@ -243,8 +245,8 @@ public class CameraThread extends HandlerThread {
     	// If it is true, We can't simply call it always.
         if (mAutoFocusRequired) {
             mCamera.autoFocus(new Camera.AutoFocusCallback() {
-                public void onAutoFocus(boolean success, Camera camera) {
-                	shoot();
+                public void onAutoFocus(final boolean success, final Camera camera) {
+                	shoot_Impl();
                 }
             });
         } else {
