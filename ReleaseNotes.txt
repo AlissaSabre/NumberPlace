@@ -1,24 +1,12 @@
 Release Notes for Number Place Breaker
 
-Release 0.70 (2013-10-15)
+Release 0.80 (2013-10-27)
 
-* All basic features now work.
+* Slightly improved UI.
 
-** To capture a puzzle picture using device camera.
-** To edit a puzzle to correct capture errors.
-** To solve a puzzle using SAT solver.
+* OpenCV Manager is made not mandatory.
 
-* This version requires OpenCV Manager to be installed on the device.
+** Number Place Breaker don't terminates when the user chose not to install OpenCV Manager.
+** Functions other than Capture work properly without OpenCV Manager.
 
-** It is available on the Google Play market for free.
-
-** If it is not installed already, Number Place Breaker asks you
-   "OpenCV Manager package was not found! Try to install it?"
-   Answer "Yes" to this question.  It guide you to Google Play store.
-   If you choose "No", Number Place Breaker will crush.
-
-* This version supports English UI only.
-
-** Japanese localization will be included in future releases.
-** For the moment, there are no plan to translate into other languages.
-
+* This version supports English and Japanese UIs.
