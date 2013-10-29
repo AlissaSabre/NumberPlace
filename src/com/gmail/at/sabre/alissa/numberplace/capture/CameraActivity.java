@@ -59,27 +59,43 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
         final SurfaceHolder holder = ((SurfaceView)findViewById(R.id.surfaceView)).getHolder();
         holder.addCallback(this);
-        initHolder(holder);
+        setSurfaceType(holder);
 
         mHandler = new Handler();
     }
 
+    /***
+     * Set the type of a {@link SurfaceHolder} to {@link SurfaceHolder#SURFACE_TYPE_PUSH_BUFFERS}.
+     * <p>
+     * Although Google deprecated both {@link SurfaceHolder#setType(int)}
+     * method and {@link SURFACE_TYPE_PUSH_BUFFERS} constant
+     * and let lint alert on it, the call is absolutely
+     * needed on Android devices before API 11 (3.0).
+     * @param holder
+     */
     @SuppressWarnings("deprecation")
-    private static void initHolder(SurfaceHolder holder) {
-        // Although Google deprecated SURFACE_TYPE_PUSH_BUFFERS
-        // and lint alerts on it, the call is absolutely
-        // needed on Android devices before API 11 (3.0).
-        // We can't live without one.
+    private static void setSurfaceType(final SurfaceHolder holder) {
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
     public void surfaceCreated(final SurfaceHolder holder) {
         Log.i(TAG, "surfaceCreated");
-        mCameraThread = new CameraThread(this);
+        mCameraThread = new CameraThread(this, holder);
         mCameraThread.start();
         mCameraThread.initialize();
     }
 
+    /***
+     * Adjust the surface view size
+     * to match its aspect ratio with the specified preview size's.
+     * This method is Called by {@link CameraThread}
+     * when an appropriate camera preview size
+     * is decided during its initialization.
+     * This method then calls {@link CameraThread#startPreview(SurfaceHolder)}.
+     *
+     * @param pw preview width
+     * @param ph preview height
+     */
     public void onPreviewSizeDecided(final int pw, final int ph) {
         Log.i(TAG, "onPreviewSizeDetected");
         mHandler.post(new Runnable() {
@@ -108,7 +124,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
 		        // We have the surface view resized properly.  Start camera preview now.
 		        final SurfaceHolder holder = surfaceView.getHolder();
-		        mCameraThread.startPreview(holder);
+		        mCameraThread.startPreview();
 		        mContentView.setOnClickListener(CameraActivity.this);
 			}
 		});
@@ -124,17 +140,26 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
     public void onClick(View v) {
         mContentView.setOnClickListener(null);
-        final int rotation = getWindowManager().getDefaultDisplay().getRotation();
-        mCameraThread.focusAndShoot(rotation);
+        mCameraThread.focusAndShoot();
     }
 
-    public void onPictureTaken(final byte[] data, final int rotation) {
+    /***
+     * {@link CameraThread} calls this method when it finished taking a picture.
+     *
+     * @param data
+     *            raw data of the taken picture.
+     *            The content may be invalid after returning from this method.
+     */
+    public void onPictureTaken(final byte[] data) {
         Log.i(TAG, "camera_onPictureTaken");
+        // The array data is accessed later through the Handler.
+        // We need to save its content in our own array.
+        final byte[] copy = data.clone();
         mHandler.post(new Runnable() {
 			public void run() {
 		        Intent result = new Intent();
-		        result.putExtra(K.EXTRA_IMAGE_DATA, data);
-		        result.putExtra(K.EXTRA_DEVICE_ROTATION, rotation);
+		        result.putExtra(K.EXTRA_IMAGE_DATA, copy);
+		        result.putExtra(K.EXTRA_DEVICE_ROTATION, getWindowManager().getDefaultDisplay().getRotation());
 		        setResult(RESULT_OK, result);
 		        finish();
 			}
