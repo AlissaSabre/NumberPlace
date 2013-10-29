@@ -78,8 +78,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
         Camera.Parameters.FOCUS_MODE_INFINITY,
     };
 
-    private SurfaceHolder mHolder;
-
     private View mContentView;
 
     private Handler mHandler;
@@ -103,9 +101,9 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
         mContentView = findViewById(R.id.content_view);
 
-        mHolder = ((SurfaceView)findViewById(R.id.surfaceView)).getHolder();
-        mHolder.addCallback(this);
-        initHolder(mHolder);
+        final SurfaceHolder holder = ((SurfaceView)findViewById(R.id.surfaceView)).getHolder();
+        holder.addCallback(this);
+        initHolder(holder);
 
         mHandler = new Handler();
     }
