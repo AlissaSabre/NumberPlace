@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -38,8 +39,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
     private static final String TAG = "numberplace..CameraActivity";
 
-    private View mContentView;
-
     private Handler mHandler;
 
     /***
@@ -55,11 +54,13 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
-        mContentView = findViewById(R.id.content_view);
+        findViewById(R.id.content_view).setOnClickListener(this);
 
         final SurfaceHolder holder = ((SurfaceView)findViewById(R.id.surfaceView)).getHolder();
         holder.addCallback(this);
         setSurfaceType(holder);
+
+        mCameraThread = new CameraThread(this, holder);
 
         mHandler = new Handler();
     }
@@ -80,7 +81,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
     public void surfaceCreated(final SurfaceHolder holder) {
         Log.i(TAG, "surfaceCreated");
-        mCameraThread = new CameraThread(this, holder);
         mCameraThread.start();
         mCameraThread.initialize();
     }
@@ -124,7 +124,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
 		        // We have the surface view resized properly.  Start camera preview now.
 		        mCameraThread.startPreview();
-		        mContentView.setOnClickListener(CameraActivity.this);
 			}
 		});
     }
@@ -138,11 +137,52 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
     }
 
     public void onClick(View v) {
-        mContentView.setOnClickListener(null);
-        mCameraThread.focusAndShoot();
+   		mCameraThread.focus();
+   		mCameraThread.shoot();
     }
 
-    /***
+    @Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+    	switch (keyCode) {
+    	case KeyEvent.KEYCODE_FOCUS:
+    		if (event.getRepeatCount() == 0) {
+    			mCameraThread.focus();
+    		}
+    		return true;
+    	case KeyEvent.KEYCODE_CAMERA:
+    		if (event.getRepeatCount() == 0) {
+    			mCameraThread.shoot();
+    		}
+    		return true;
+    	case KeyEvent.KEYCODE_DPAD_CENTER:
+    		if (event.getRepeatCount() == 0) {
+	   			mCameraThread.focus();
+	   			mCameraThread.shoot();
+    		}
+   			return true;
+    	default:
+    		return super.onKeyDown(keyCode, event);
+    	}
+	}
+
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_FOCUS:
+			if (mCameraThread != null) {
+				mCameraThread.unlockFocus();
+			}
+			return true;
+		case KeyEvent.KEYCODE_CAMERA:
+			return true;
+		case KeyEvent.KEYCODE_DPAD_CENTER:
+			return true;
+		default:
+			return super.onKeyUp(keyCode, event);
+		}
+	}
+
+	/***
      * {@link CameraThread} calls this method when it finished taking a picture.
      *
      * @param data
@@ -167,17 +207,19 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 
     public void surfaceDestroyed(final SurfaceHolder holder) {
         Log.i(TAG, "surfaceDestroyed");
-
-        mContentView.setOnClickListener(null);
         mCameraThread.terminate();
         try {
             mCameraThread.join();
         } catch (InterruptedException e) {
             // I don't think we need to take care of the case.
         }
-        mCameraThread = null;
     }
 
+    @Override
+    protected void onDestroy() {
+        Log.i(TAG, "onDestroy");
+        super.onDestroy();
+    }
 
     @Override
     protected void onStart() {
@@ -209,10 +251,5 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
         super.onStop();
     }
 
-    @Override
-    protected void onDestroy() {
-        Log.i(TAG, "onDestroy");
-        super.onDestroy();
-    }
 
 }

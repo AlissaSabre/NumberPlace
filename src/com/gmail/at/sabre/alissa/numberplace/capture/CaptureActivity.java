@@ -34,7 +34,7 @@ import com.gmail.at.sabre.alissa.ocr.Ocr;
  */
 public class CaptureActivity extends Activity {
 
-    private static final String TAG = ".numberplace..CaptureActivity";
+    private static final String TAG = "numberplace..CaptureActivity";
 
     private Handler mHandler;
 

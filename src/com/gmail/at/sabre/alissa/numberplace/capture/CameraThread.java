@@ -58,10 +58,38 @@ public class CameraThread extends HandlerThread {
 
     private boolean mAutoFocusRequired;
 
+    /***
+     * The state of the camera operation.
+     * It takes one of the CAMERA_* values.
+     */
+    private int mCameraState;
+
+    /*** The camera is not fully initialized yet. */
+    private static final int CAMERA_STARTING = 0;
+
+    /*** The camera is initialized and the preview has been started. */
+    private static final int CAMERA_PREVIEW = 1;
+
+    /*** The camera is auto focusing. */
+    private static final int CAMERA_FOCUSING = 2;
+
+    /*** The camera finished auto focusing, locking its focus. */
+    private static final int CAMERA_FOCUSED = 4;
+
+    /*** The camera is auto focusing and will immediately take a picture when done. */
+    private static final int CAMERA_FOCUSING_TO_SHOOT = 5;
+
+    /*** The camera is taking a picture. */
+    private static final int CAMERA_SHOOTING = 6;
+
+    /*** The camera took a picture and the underlying resources has been released. */
+    private static final int CAMERA_SHOT = 7;
+
     public CameraThread(final CameraActivity activity, final SurfaceHolder holder) {
         super(CameraThread.class.getName());
         mActivity = activity;
         mHolder = holder;
+        mCameraState = CAMERA_STARTING;
     }
 
     @Override
@@ -196,6 +224,7 @@ public class CameraThread extends HandlerThread {
             throw new RuntimeException("Can't preview camera", e);
         }
         mCamera.startPreview();
+        mCameraState = CAMERA_PREVIEW;
     }
 
     public void focus() {
@@ -207,11 +236,25 @@ public class CameraThread extends HandlerThread {
     }
 
     private void focus_Impl() {
-    	if (mAutoFocusRequired) {
-    		mCamera.autoFocus(new Camera.AutoFocusCallback() {
-				public void onAutoFocus(final boolean success, final Camera camera) {
-				}
-			});
+    	switch (mCameraState) {
+    	case CAMERA_PREVIEW:
+    	case CAMERA_FOCUSED:
+	    	if (mAutoFocusRequired) {
+    			mCamera.cancelAutoFocus();
+	    		mCameraState = CAMERA_FOCUSING;
+	    		mCamera.autoFocus(mAutoFocusCallback);
+	    	} else {
+	    		mCameraState = CAMERA_FOCUSED;
+	    	}
+	    	break;
+    	case CAMERA_FOCUSING:
+    	case CAMERA_FOCUSING_TO_SHOOT:
+    		mCameraState = CAMERA_FOCUSING;
+    		break;
+    	case CAMERA_STARTING:
+    	case CAMERA_SHOOTING:
+    	case CAMERA_SHOT:
+    		break;
     	}
     }
 
@@ -224,35 +267,40 @@ public class CameraThread extends HandlerThread {
     }
 
     private void unlockFocus_Impl() {
-    	try {
-    		mCamera.cancelAutoFocus();
-    	} catch (Throwable e) {
+    	switch (mCameraState) {
+    	case CAMERA_FOCUSING:
+    	case CAMERA_FOCUSED:
+    	case CAMERA_FOCUSING_TO_SHOOT:
+    		mCameraState = CAMERA_PREVIEW;
+	    	try {
+	    		mCamera.cancelAutoFocus();
+	    	} catch (Throwable e) {
+	    	}
+	    	break;
+	    default:
+	    	break;
     	}
     }
 
-    public void focusAndShoot() {
-        mHandler.post(new Runnable() {
-            public void run() {
-            	focusAndShoot_Impl();
-            }
-        });
-    }
-
-    private void focusAndShoot_Impl() {
-        // I've heard a rumor that in some device, invoking Camera.autoFocus
-        // when not in MACRO/AUTO focus mode throws an Exception, though it appears
-        // contrary to the Android API document.
-    	// If it is true, We can't simply call it always.
-        if (mAutoFocusRequired) {
-            mCamera.autoFocus(new Camera.AutoFocusCallback() {
-                public void onAutoFocus(final boolean success, final Camera camera) {
-                	shoot_Impl();
-                }
-            });
-        } else {
-        	shoot_Impl();
-        }
-    }
+    private final Camera.AutoFocusCallback mAutoFocusCallback = new Camera.AutoFocusCallback() {
+		public void onAutoFocus(final boolean success, final Camera camera) {
+			switch (mCameraState) {
+			case CAMERA_FOCUSING:
+				mCameraState = CAMERA_FOCUSED;
+				break;
+			case CAMERA_FOCUSING_TO_SHOOT:
+				mCameraState = CAMERA_FOCUSED;
+				shoot_Impl();
+				break;
+			case CAMERA_STARTING:
+			case CAMERA_PREVIEW:
+			case CAMERA_FOCUSED:
+			case CAMERA_SHOOTING:
+			case CAMERA_SHOT:
+				break;
+			}
+		}
+	};
 
     public void shoot() {
     	mHandler.post(new Runnable() {
@@ -263,17 +311,32 @@ public class CameraThread extends HandlerThread {
     }
 
     private void shoot_Impl() {
-        mCamera.takePicture(new Camera.ShutterCallback() {
-            public void onShutter() {
-            }
-        },
-        null,
-        new Camera.PictureCallback() {
-            // This callback is for JPEG, by the way.
-            public void onPictureTaken(final byte[] data, final Camera camera) {
-                mActivity.onPictureTaken(data);
-            }
-        });
+    	switch (mCameraState) {
+    	case CAMERA_PREVIEW:
+    	case CAMERA_FOCUSED:
+    		mCameraState = CAMERA_SHOOTING;
+            mCamera.takePicture(new Camera.ShutterCallback() {
+                public void onShutter() {
+                }
+            },
+            null,
+            new Camera.PictureCallback() {
+                // This callback is for JPEG, by the way.
+                public void onPictureTaken(final byte[] data, final Camera camera) {
+                	mCameraState = CAMERA_SHOT;
+                    mActivity.onPictureTaken(data);
+                }
+            });
+            break;
+    	case CAMERA_FOCUSING:
+    	case CAMERA_FOCUSING_TO_SHOOT:
+    		mCameraState = CAMERA_FOCUSING_TO_SHOOT;
+    		break;
+    	case CAMERA_STARTING:
+    	case CAMERA_SHOOTING:
+    	case CAMERA_SHOT:
+    		break;
+    	}
     }
 
     public void terminate() {
@@ -285,6 +348,7 @@ public class CameraThread extends HandlerThread {
     }
 
     private void terminate_Impl() {
+        mCameraState = CAMERA_SHOT;
         // I'm not sure the following three consecutive try-catch blocks are really needed...
         try {
             mCamera.stopPreview();
