@@ -1,12 +1,5 @@
 Release Notes for Number Place Breaker
 
-Release 0.80 (2013-10-27)
+Release 0.90 (2013-?-?)
 
-* Slightly improved UI.
-
-* OpenCV Manager is made not mandatory.
-
-** Number Place Breaker don't terminates when the user chose not to install OpenCV Manager.
-** Functions other than Capture work properly without OpenCV Manager.
-
-* This version supports English and Japanese UIs.
+* "Shutter button", if available on the phone, now works to take a picture.
