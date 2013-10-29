@@ -6,18 +6,23 @@ import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.hardware.Camera;
+import android.hardware.Camera.AutoFocusCallback;
+import android.hardware.Camera.PictureCallback;
+import android.hardware.Camera.ShutterCallback;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.SurfaceHolder;
 
 /***
  * The thread that accesses the camera device.
- * All public methods of this class are intended to be called by the UI thread.
+ * All public methods of this class (except for Camera callback methods)
+ * are intended to be called by the UI thread.
  * It then uses {@link Handler} to execute the requested actions in this thread.
  *
  * @author alissa
  */
-public class CameraThread extends HandlerThread {
+public class CameraThread extends HandlerThread
+		implements AutoFocusCallback, ShutterCallback, PictureCallback {
 
 	protected Handler mHandler;
 
@@ -50,12 +55,40 @@ public class CameraThread extends HandlerThread {
         Camera.Parameters.FOCUS_MODE_INFINITY,
     };
 
-	private final CameraActivity mActivity;
+    /***
+     * Callback interface.
+     * @author alissa
+     */
+    public interface Callback {
 
-	private final SurfaceHolder mHolder;
+        /***
+         * Called once when an appropriate camera preview size
+         * is decided during the initialization.
+         *
+         * @param pw
+         *            preview width
+         * @param ph
+         *            preview height
+         */
+        public void onPreviewSizeDecided(int pw, int ph);
 
+    	/***
+         * Called once when the CameraThread has taken a picture.
+         *
+         * @param data
+         *            JPEG picture data.
+         *            The content is valid only during this method is executing.
+         */
+        public void onPictureTaken(byte[] data);
+    }
+
+    /*** The callback this thread invokes. */
+	private final Callback mCallback;
+
+	/*** The camera hardware. */
     private Camera mCamera;
 
+    /*** Whether the camera require an app-issued auto-focusing. */
     private boolean mAutoFocusRequired;
 
     /***
@@ -64,8 +97,8 @@ public class CameraThread extends HandlerThread {
      */
     private int mCameraState;
 
-    /*** The camera is not fully initialized yet. */
-    private static final int CAMERA_STARTING = 0;
+    /*** The camera is not working, i.e., not ready yet or already completed. */
+    private static final int CAMERA_INACTIVE = 0;
 
     /*** The camera is initialized and the preview has been started. */
     private static final int CAMERA_PREVIEW = 1;
@@ -74,22 +107,20 @@ public class CameraThread extends HandlerThread {
     private static final int CAMERA_FOCUSING = 2;
 
     /*** The camera finished auto focusing, locking its focus. */
-    private static final int CAMERA_FOCUSED = 4;
+    private static final int CAMERA_FOCUSED = 3;
 
     /*** The camera is auto focusing and will immediately take a picture when done. */
-    private static final int CAMERA_FOCUSING_TO_SHOOT = 5;
+    private static final int CAMERA_FOCUSING_TO_SHOOT = 4;
 
-    /*** The camera is taking a picture. */
-    private static final int CAMERA_SHOOTING = 6;
-
-    /*** The camera took a picture and the underlying resources has been released. */
-    private static final int CAMERA_SHOT = 7;
-
-    public CameraThread(final CameraActivity activity, final SurfaceHolder holder) {
+    /***
+     * The constructor.
+     * @param callback
+     *            The callback.  It must not be a null.
+     */
+    public CameraThread(final Callback callback) {
         super(CameraThread.class.getName());
-        mActivity = activity;
-        mHolder = holder;
-        mCameraState = CAMERA_STARTING;
+        mCallback = callback;
+        mCameraState = CAMERA_INACTIVE;
     }
 
     @Override
@@ -99,15 +130,24 @@ public class CameraThread extends HandlerThread {
         mHandler = new Handler(getLooper());
     }
 
-    public void initialize() {
+    /***
+     * Initialize the camera hardware.
+     * This method must be called after this CameraThread is start()ed
+     * and before any other methods are called.
+     * The Surface that the specified SurfaceHolder holds should have been created.
+     *
+     * @param holder
+     *             A SurfaceHolder whose surface is used for camera preview.
+     */
+    public void initialize(final SurfaceHolder holder) {
         mHandler.post(new Runnable() {
             public void run() {
-            	initialize_Impl();
+            	initialize_Impl(holder);
             }
         });
     }
 
-    private void initialize_Impl() {
+    private void initialize_Impl(final SurfaceHolder holder) {
 
         mCamera = Camera.open();
         if (mCamera == null) {
@@ -176,13 +216,17 @@ public class CameraThread extends HandlerThread {
             mCamera.setParameters(params);
         }
 
+        // Pass the decided preview size to UI thread so that it can
+        // resize the surface view appropriately.
+        mCallback.onPreviewSizeDecided(preview.width, preview.height);
+
         // Next, take care of focus mode.
         String currentFocusMode = params.getFocusMode();
         List<String> supportedFocusModes = params.getSupportedFocusModes();
         int currentModePreference = Arrays.asList(FOCUS_MODE_PREFERENCES).indexOf(currentFocusMode);
         if (currentModePreference >= 0) {
-            // We know the current focus mode. Use a more preferred mode
-            // if the camera supports one.
+            // We know the current focus mode.
+            // Use a more preferred mode if the camera supports one.
             for (int i = 0; i < currentModePreference; i++) {
                 if (supportedFocusModes.indexOf(FOCUS_MODE_PREFERENCES[i]) >= 0) {
                     // Yes it does.  Use this mode.
@@ -195,29 +239,17 @@ public class CameraThread extends HandlerThread {
         }
 
         // Record whether the chosen (or default) focus mode requires
-        // app issued auto-focus.
+        // app-issued auto-focus.
         mAutoFocusRequired =
                 currentFocusMode.equals(Camera.Parameters.FOCUS_MODE_AUTO) ||
                 currentFocusMode.equals(Camera.Parameters.FOCUS_MODE_MACRO);
 
-        // Pass the decided preview size to UI thread so that it can
-        // resize the surface view appropriately.
-        final int pw = preview.width;
-        final int ph = preview.height;
-        mActivity.onPreviewSizeDecided(pw, ph);
-    }
-
-    public void startPreview() {
-        mHandler.post(new Runnable() {
-            public void run() {
-            	startPreview_Impl();
-            }
-        });
-    }
-
-    private void startPreview_Impl() {
+        // Start preview.
+        // It appears that we don't need to wait
+        // for the resize of the surface view.  Great.
+        // Thank you, Google!
         try {
-            mCamera.setPreviewDisplay(mHolder);
+            mCamera.setPreviewDisplay(holder);
         } catch (IOException e) {
             // We can't capture if this happened...
             // TODO: this event should be notified to user, too.
@@ -227,6 +259,9 @@ public class CameraThread extends HandlerThread {
         mCameraState = CAMERA_PREVIEW;
     }
 
+    /***
+     * Start auto focus operation.
+     */
     public void focus() {
     	mHandler.post(new Runnable() {
     		public void run() {
@@ -242,7 +277,7 @@ public class CameraThread extends HandlerThread {
 	    	if (mAutoFocusRequired) {
     			mCamera.cancelAutoFocus();
 	    		mCameraState = CAMERA_FOCUSING;
-	    		mCamera.autoFocus(mAutoFocusCallback);
+	    		mCamera.autoFocus(this);
 	    	} else {
 	    		mCameraState = CAMERA_FOCUSED;
 	    	}
@@ -251,13 +286,34 @@ public class CameraThread extends HandlerThread {
     	case CAMERA_FOCUSING_TO_SHOOT:
     		mCameraState = CAMERA_FOCUSING;
     		break;
-    	case CAMERA_STARTING:
-    	case CAMERA_SHOOTING:
-    	case CAMERA_SHOT:
+    	case CAMERA_INACTIVE:
     		break;
     	}
     }
 
+    /***
+     * Callback method invoked when the auto focus operation completes.
+     */
+    public void onAutoFocus(final boolean success, final Camera camera) {
+		switch (mCameraState) {
+		case CAMERA_FOCUSING:
+			mCameraState = CAMERA_FOCUSED;
+			break;
+		case CAMERA_FOCUSING_TO_SHOOT:
+			mCameraState = CAMERA_FOCUSED;
+			shoot_Impl();
+			break;
+		case CAMERA_INACTIVE:
+		case CAMERA_PREVIEW:
+		case CAMERA_FOCUSED:
+			break;
+		}
+	}
+
+    /***
+     * Cancel the on-going auto focus operation, if any, and
+     * release the focus lock.
+     */
     public void unlockFocus() {
     	mHandler.post(new Runnable() {
 			public void run() {
@@ -277,31 +333,16 @@ public class CameraThread extends HandlerThread {
 	    	} catch (Throwable e) {
 	    	}
 	    	break;
-	    default:
+    	case CAMERA_INACTIVE:
+    	case CAMERA_PREVIEW:
 	    	break;
     	}
     }
 
-    private final Camera.AutoFocusCallback mAutoFocusCallback = new Camera.AutoFocusCallback() {
-		public void onAutoFocus(final boolean success, final Camera camera) {
-			switch (mCameraState) {
-			case CAMERA_FOCUSING:
-				mCameraState = CAMERA_FOCUSED;
-				break;
-			case CAMERA_FOCUSING_TO_SHOOT:
-				mCameraState = CAMERA_FOCUSED;
-				shoot_Impl();
-				break;
-			case CAMERA_STARTING:
-			case CAMERA_PREVIEW:
-			case CAMERA_FOCUSED:
-			case CAMERA_SHOOTING:
-			case CAMERA_SHOT:
-				break;
-			}
-		}
-	};
-
+    /***
+     * Take a picture.
+     * If auto focus operation is on-going, delay the shooting until it finishes.
+     */
     public void shoot() {
     	mHandler.post(new Runnable() {
             public void run() {
@@ -314,32 +355,40 @@ public class CameraThread extends HandlerThread {
     	switch (mCameraState) {
     	case CAMERA_PREVIEW:
     	case CAMERA_FOCUSED:
-    		mCameraState = CAMERA_SHOOTING;
-            mCamera.takePicture(new Camera.ShutterCallback() {
-                public void onShutter() {
-                }
-            },
-            null,
-            new Camera.PictureCallback() {
-                // This callback is for JPEG, by the way.
-                public void onPictureTaken(final byte[] data, final Camera camera) {
-                	mCameraState = CAMERA_SHOT;
-                    mActivity.onPictureTaken(data);
-                }
-            });
+        	mCameraState = CAMERA_INACTIVE;
+            mCamera.takePicture(this, null, this);
             break;
     	case CAMERA_FOCUSING:
     	case CAMERA_FOCUSING_TO_SHOOT:
     		mCameraState = CAMERA_FOCUSING_TO_SHOOT;
     		break;
-    	case CAMERA_STARTING:
-    	case CAMERA_SHOOTING:
-    	case CAMERA_SHOT:
+    	case CAMERA_INACTIVE:
     		break;
     	}
     }
 
-    public void terminate() {
+    /***
+     * Callback method invoked when the camera hardware started taking a picture.
+     */
+	public void onShutter() {
+		// We have nothing to do here,
+		// but just passing a null to takePicture method triggers a malfunction
+		// on some phone,
+		// so we need to pass a valid callback object.
+	}
+
+	/***
+	 * Callback method invoked when the JPEG data of a picture is ready.
+	 */
+    public void onPictureTaken(final byte[] data, final Camera camera) {
+        mCallback.onPictureTaken(data);
+	}
+
+    /***
+     * Stop this CameraThread.
+     * The caller can then call {@link #join()} to wait for actual termination.
+     */
+	public void terminate() {
         mHandler.post(new Runnable() {
             public void run() {
             	terminate_Impl();
@@ -348,7 +397,7 @@ public class CameraThread extends HandlerThread {
     }
 
     private void terminate_Impl() {
-        mCameraState = CAMERA_SHOT;
+        mCameraState = CAMERA_INACTIVE;
         // I'm not sure the following three consecutive try-catch blocks are really needed...
         try {
             mCamera.stopPreview();

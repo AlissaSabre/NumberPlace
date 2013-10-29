@@ -35,7 +35,8 @@ import com.gmail.at.sabre.alissa.numberplace.R;
  *
  * @author alissa
  */
-public class CameraActivity extends Activity implements SurfaceHolder.Callback, View.OnClickListener {
+public class CameraActivity extends Activity
+		implements SurfaceHolder.Callback, View.OnClickListener, CameraThread.Callback {
 
     private static final String TAG = "numberplace..CameraActivity";
 
@@ -60,7 +61,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
         holder.addCallback(this);
         setSurfaceType(holder);
 
-        mCameraThread = new CameraThread(this, holder);
+        mCameraThread = new CameraThread(this);
 
         mHandler = new Handler();
     }
@@ -82,7 +83,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
     public void surfaceCreated(final SurfaceHolder holder) {
         Log.i(TAG, "surfaceCreated");
         mCameraThread.start();
-        mCameraThread.initialize();
+        mCameraThread.initialize(holder);
     }
 
     /***
@@ -91,7 +92,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
      * This method is Called by {@link CameraThread}
      * when an appropriate camera preview size
      * is decided during its initialization.
-     * This method then calls {@link CameraThread#startPreview(SurfaceHolder)}.
      *
      * @param pw preview width
      * @param ph preview height
@@ -121,9 +121,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
 		            layoutParams.height = nh;
 		            surfaceView.setLayoutParams(layoutParams);
 		        }
-
-		        // We have the surface view resized properly.  Start camera preview now.
-		        mCameraThread.startPreview();
 			}
 		});
     }
@@ -136,6 +133,10 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
         // the surface is changed. Thank you, Google!
     }
 
+    /***
+     * This method is called back when anywhere on the screen is touched.
+     * We use it as a trigger to take a picture.
+     */
     public void onClick(View v) {
    		mCameraThread.focus();
    		mCameraThread.shoot();
@@ -186,7 +187,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
      * {@link CameraThread} calls this method when it finished taking a picture.
      *
      * @param data
-     *            raw data of the taken picture.
+     *            JPEG data of the taken picture.
      *            The content may be invalid after returning from this method.
      */
     public void onPictureTaken(final byte[] data) {
