@@ -130,6 +130,15 @@ public class CameraThread extends HandlerThread
         mHandler = new Handler(getLooper());
     }
 
+	@Override
+	public void run() {
+		try {
+			super.run();
+		} finally {
+			onTerminate();
+		}
+	}
+
     /***
      * Initialize the camera hardware.
      * This method must be called after this CameraThread is start()ed
@@ -282,11 +291,9 @@ public class CameraThread extends HandlerThread
 	    		mCameraState = CAMERA_FOCUSED;
 	    	}
 	    	break;
+    	case CAMERA_INACTIVE:
     	case CAMERA_FOCUSING:
     	case CAMERA_FOCUSING_TO_SHOOT:
-    		mCameraState = CAMERA_FOCUSING;
-    		break;
-    	case CAMERA_INACTIVE:
     		break;
     	}
     }
@@ -313,6 +320,16 @@ public class CameraThread extends HandlerThread
     /***
      * Cancel the on-going auto focus operation, if any, and
      * release the focus lock.
+     * However, if this method is called when {@link #shoot()} has been called
+     * and the shooting is delayed,
+     * this method <b>doesn't</b> cancel the on-going auto focus operation
+     * as well as the delayed shooting.
+     * It is to mimic the shutter button behaviour on usual auto-focus cameras.
+     * <p>
+     * Well, I have a slight feeling that the special handling of the
+     * already-shot case is a part of a UI design but a camera control,
+     * and the corresponding logic should be somewhere in {@link CameraActivity} but here.
+     * FIXME.
      */
     public void unlockFocus() {
     	mHandler.post(new Runnable() {
@@ -326,22 +343,23 @@ public class CameraThread extends HandlerThread
     	switch (mCameraState) {
     	case CAMERA_FOCUSING:
     	case CAMERA_FOCUSED:
-    	case CAMERA_FOCUSING_TO_SHOOT:
     		mCameraState = CAMERA_PREVIEW;
-	    	try {
-	    		mCamera.cancelAutoFocus();
-	    	} catch (Throwable e) {
-	    	}
+    		mCamera.cancelAutoFocus();
 	    	break;
     	case CAMERA_INACTIVE:
     	case CAMERA_PREVIEW:
+    	case CAMERA_FOCUSING_TO_SHOOT:
 	    	break;
     	}
     }
 
     /***
      * Take a picture.
-     * If auto focus operation is on-going, delay the shooting until it finishes.
+     * This method returns immediately, and
+     * {@link Callback#onPictureTaken(byte[])} will be called back
+     * when the picture data is ready.
+     * If auto focus operation is on-going,
+     * the shooting is delayed until it finishes.
      */
     public void shoot() {
     	mHandler.post(new Runnable() {
@@ -375,36 +393,56 @@ public class CameraThread extends HandlerThread
 		// but just passing a null to takePicture method triggers a malfunction
 		// on some phone,
 		// so we need to pass a valid callback object.
+		// That's why this method is here.
 	}
 
 	/***
 	 * Callback method invoked when the JPEG data of a picture is ready.
+	 * <p>
+	 * This implementation simply invokes {@link Callback#onPictureTaken(byte[])}.
+	 * Well, we could make {@link Callback} a subinterface of {@link Camera.PictureCallback}
+	 * and {@link Camera#takePicture(ShutterCallback, PictureCallback, PictureCallback)} to
+	 * call back the method in {@link CameraActivity} directly. However, there is a
+	 * small problem in the scenario. To do so, {@link CameraActivity#onPictureTaken(byte[])}
+	 * needs to accept one more argument of type {@link Camera} to match the signature.
+	 * In our design, all access to the camera hardware is encapsulated in this class, and
+	 * {@link CameraActivity} never touches it. Passing a Camera object to CameraActivity
+	 * breaks this design. That's the reason I wrote this indirection. in that sense,
+	 * the major function of this method is to drop a Camera object. :-)
 	 */
     public void onPictureTaken(final byte[] data, final Camera camera) {
         mCallback.onPictureTaken(data);
 	}
 
     /***
-     * Stop this CameraThread.
-     * The caller can then call {@link #join()} to wait for actual termination.
+     * <i>Close</i> this thread, i.e., release the camera in a clean way.
+     * This method is called from our own {@link #run()} when the
+     * thread is about to terminate.
      */
-	public void terminate() {
-        mHandler.post(new Runnable() {
-            public void run() {
-            	terminate_Impl();
-            }
-        });
-    }
-
-    private void terminate_Impl() {
+    protected void onTerminate() {
+    	// Nobody takes care of mCameraState after close(), so this is redundant. Just in case.
         mCameraState = CAMERA_INACTIVE;
-        // I'm not sure the following three consecutive try-catch blocks are really needed...
+
+        // I'm not sure the following three consecutive try-catch blocks are really needed.
+        // They are initially added in response to some rumors flowing on the web saying
+        // some Android camera implementation is broken and calling stopPreview when not in
+        // preview throws an exception, calling cancelAutoFocus at an inappropriate timing
+        // does, etc. I could remove them.
+        //
+        // However, I know that in the current code there is one case the following try blocks
+        // are actually necessary. If the Camera.open() at the very beginning of initialize()
+        // failed (it can easily if you have some bad-behaving camera-using app installed
+        // on your phone), the initialize() method throws an exception leaving the mCamera
+        // uninitialized (i.e., set to null), then the finally clause in run() calls this
+        // method with mCamera set to null, causing NullPointerException in all of the
+        // following try clauses. So, if you are removing try-catch from the following
+        // code, don't remember testing mCamera != null or making some other arrangements.
         try {
-            mCamera.stopPreview();
+            mCamera.cancelAutoFocus();
         } catch (Throwable e) {
         }
         try {
-            mCamera.cancelAutoFocus();
+            mCamera.stopPreview();
         } catch (Throwable e) {
         }
         try {
@@ -412,7 +450,5 @@ public class CameraThread extends HandlerThread
         } catch (Throwable e) {
         }
         mCamera = null;
-
-        quit();
     }
 }

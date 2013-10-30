@@ -29,9 +29,6 @@ import com.gmail.at.sabre.alissa.numberplace.R;
  * picture is returned from the ACTION_IMAGE_CAPTURE activity is not documented
  * well and there are a lot of actual differences among implementations. I don't
  * want to write codes to handle tons of separate cases.
- * <p>
- * TODO: For now a picture is taken only by touching on the screen. It should
- * accept D-pad OK and 'shutter' button, if ones are available on the device.
  *
  * @author alissa
  */
@@ -42,11 +39,7 @@ public class CameraActivity extends Activity
 
     private Handler mHandler;
 
-    /***
-     * The thread that directly accesses the camera. Note that {@link #mCamera}
-     * and {@link #mAutoFocusRequired} logically belong to this thread, and the
-     * activity's main thread (our UI thread) never touches them.
-     */
+    /*** The thread that owns and directly accesses the camera. */
     private CameraThread mCameraThread;
 
     @Override
@@ -92,6 +85,7 @@ public class CameraActivity extends Activity
      * This method is Called by {@link CameraThread}
      * when an appropriate camera preview size
      * is decided during its initialization.
+     * We need to use {@link Handler} since it is invoked by a no UI thread.
      *
      * @param pw preview width
      * @param ph preview height
@@ -115,6 +109,7 @@ public class CameraActivity extends Activity
 		            nw = vh * pw / ph;
 		            nh = vh;
 		        }
+		        // The one pixel allowance is to cover the errors from integral division.
 		        if (Math.abs(vw - nw) > 1 || Math.abs(vh - nh) > 1) {
 		            final ViewGroup.LayoutParams layoutParams = surfaceView.getLayoutParams();
 		            layoutParams.width = nw;
@@ -128,7 +123,7 @@ public class CameraActivity extends Activity
     public void surfaceChanged(final SurfaceHolder holder, final int format, final int width, final int height) {
         Log.i(TAG, "surfaceChanged");
 
-        // I'm surprised to find I have nothing to do here. It appears because
+        // I'm surprised to find I have nothing to do here. The reason appears that
         // the camera preview code takes care of everything we need to do when
         // the surface is changed. Thank you, Google!
     }
@@ -175,7 +170,6 @@ public class CameraActivity extends Activity
 			}
 			return true;
 		case KeyEvent.KEYCODE_CAMERA:
-			return true;
 		case KeyEvent.KEYCODE_DPAD_CENTER:
 			return true;
 		default:
@@ -206,20 +200,20 @@ public class CameraActivity extends Activity
 		});
     }
 
+    @Override
+    protected void onDestroy() {
+        Log.i(TAG, "onDestroy");
+        super.onDestroy();
+    }
+
     public void surfaceDestroyed(final SurfaceHolder holder) {
         Log.i(TAG, "surfaceDestroyed");
-        mCameraThread.terminate();
+        mCameraThread.quit();
         try {
             mCameraThread.join();
         } catch (InterruptedException e) {
             // I don't think we need to take care of the case.
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        Log.i(TAG, "onDestroy");
-        super.onDestroy();
     }
 
     @Override
