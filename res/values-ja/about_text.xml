@@ -1,39 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 <string name="about_text" tools:ignore="TypographyDashes,TypographyOther">
-\nThe “Number Place Breaker” automatically solves Number Place puzzles, also known as Sudoku,
-only by taking a picture of a puzzle.
-It is not a practical application; Please consider it as an experiment or a proof-of-concept.
-There is no guarantee this app works correctly.
-Please use it on your own risk.
+\n「ナンプレ破り」は、ナンバープレース（ナンプレ、数独などとも呼ばれるパズル）の問題をカメラで撮影し、自動的に解くアプリです。
+これは実用的なアプリではありません。単なる実験またはアイディア確認とお考えください。
+また、このアプリは正しく動作する保証もありません。
+ご自身の責任でお使いください。
 \n
-\nFull source code of this program is available on Github at http://github.com/AlissaSabre/NumberPlace
+\nこのプログラムの完全なソースコードは、Githubにあり、 http://github.com/AlissaSabre/NumberPlace から入手可能です。
 \n
-\nHOW TO USE THIS APP
+\n使い方
 \n
-\n1. Touch [Capture] to start the camera.
+\n1. [撮影]にタッチしてカメラを起動します。
 \n
-\n2. Take a picture of a Number Place puzzle by touching anywhere on the screen.
+\n2. 画面のどこかにタッチして、ナンバープレースの問題を撮影します。
 \n
-\n3. Check the captured puzzle. There may be erros. You can correct them by touching the puzzle board.
+\n3. 読み込まれた問題を確認してください。間違いがあるかもしれません。間違っている部分にタッチすると訂正できます。
 \n
-\n4. Touch [Solve] to let the app solve the puzzle and show the answer.
+\n4. [解く]にタッチすると、問題を解いて答えを表示します。
 \n
-\nNOTE ON OpenCV Manager
+\nOpenCV Managerについて
 \n
-\nThis app internally uses another app, “OpenCV Manager” for image processing.
-It is available on Google Play for free.
-The Number Place Breaker prompts you when it is needed.
-Please install it if you want to use Capture function.
-It can\'t capture a puzzle unless OpenCV Manager is installed.
+\nこのアプリは、別の方が作った「OpenCV Manager」というアプリを利用して内部の画像認識処理を行います。
+OpenCV Managerは、Google Playから無料でダウンロードできます。
+OpenCV Managerが必要なときにはメッセージが出ます。
+撮影機能を利用するためには、OpenCV Managerをインストールしてください。
+OpenCV Managerをインストールしないと、撮影機能は動作しません。
 \n
-\nCREDITS
+\n作者など
 \n
-\nNumber Place Breaker is written by Alissa Sabre (http://alissa-sabre.cocolog-nifty.com).
+\nこのアプリ「ナンプレ破り」はAlissa Sabre (http://alissa-sabre.cocolog-nifty.com) が作りました。
 \n
-\nThe solver part of this work was inspired by an excellent article by Naoyuki Tamura available as http://bach.istc.kobe-u.ac.jp/copris/puzzles/
+\nこのアプリのパズルを解く部分は、 http://bach.istc.kobe-u.ac.jp/copris/puzzles/ に掲載されている田村直之先生の素晴らしい記事にインスパイアされたものです。
 \n
-\nThis program may use and/or contain whole or parts of unmodified works from the following open source projects.
+\nこのプログラムは、以下のオープンソースプロジェクトの成果を使用しており、成果物の一部または全部を含んでいるかもしれません。
 \n
 \nOpen Source Computer Vision Library for Android (OpenCV4Android), version 2.4.6,
 available through http://opencv.org 
@@ -81,9 +80,9 @@ distributed under the following license:
 available on http://www.sat4j.org, distributed under a dual-license of
 EPL 1.0 (http://www.eclipse.org/org/documents/epl-v10.php)
 and LGPL 2.1 (http://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html),
-which is a derivative work of 
-MiniSat, version 1.1.4 implementation, 
-the source code for which can be found at www.minisat.se, 
+which is a derivative work of
+MiniSat, version 1.1.4 implementation,
+the source code for which can be found at www.minisat.se,
 under the following permissive license:
 \n
 \n  MiniSat -- Copyright (c) 2003-2005, Niklas Een, Niklas Sorensson
@@ -107,7 +106,7 @@ under the following permissive license:
 \n  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 \n  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 \n
-\n“数独” and/or “Sudoku” appear registered trademarks by NIKOLI Co., Ltd. in Japan and some other countries.
-Other names of the same puzzle, e.g. “ナンプレ”, “ナンバープレース”, “Number Place” may be trademarks of someone in somewhere on this planet.
+\n「数独」 や「Sudoku」 は、株式会社ニコリの日本および他の国における登録商標のようです。
+同じパズルを意味するその他の名前、例えば「ナンプレ」「ナンバープレース」「Number Place」などは、どこかの国や地域における誰かの商標なのかもしれません。
 </string>
 </resources>

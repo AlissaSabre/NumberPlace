@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- This string is not a part of UI and not for translation. -->
+    <string name="opencv_uri" translatable="false">https://play.google.com/store/apps/details?id=org.opencv.engine</string>
+</resources>
