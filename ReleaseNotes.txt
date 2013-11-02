@@ -1,5 +1,10 @@
 Release Notes for Number Place Breaker
+======================================
 
-Release 0.90 (2013-?-?)
+Release 0.82 (2013-11-2)
+------------------------
 
-* "Shutter button", if available on the phone, now works to take a picture.
+* "Shutter button" now works to take a picture (if one is available on the phone.)
+* Improved puzzle recognition accuracy under some bad conditions (slightly, though.)
+* Several code cleanup (invisible to users.)
+
