@@ -1,9 +1,9 @@
 NumberPlace
 ===========
 
-_Number_Place_Breaker_for_Android_
+_Number Place Breaker for Android_
 
-Number Place Breaker is an Android app that automatically solves a Number Place (also known as _Sudoku_ or 数独) puzzle.  It is a sort of apps usually called _Sudoku_Solver_.  However, unlike most of other sudoku solvers, you don't need to type in a puzzle.  Use your phone's camera to take a picture of a puzzle, and touch the [Solve] button.  That's all.  The solution to the puzzle then appears on the screen.  It takes several seconds, but that's surely faster than you, isn't it?
+Number Place Breaker is an Android app that automatically solves a Number Place (also known as _Sudoku_ or 数独) puzzle.  It is a sort of apps usually called _Sudoku Solver_.  However, unlike most of other sudoku solvers, you don't need to type in a puzzle.  Use your phone's camera to take a picture of a puzzle, and touch the [Solve] button.  That's all.  The solution to the puzzle then appears on the screen.  It takes several seconds, but that's surely faster than you, isn't it?
 
 The ready to use apk should be available [here on Google Play] (https://play.google.com/store/apps/details?id=com.gmail.at.sabre.alissa.numberplace).
 
