@@ -24,6 +24,10 @@ import com.gmail.at.sabre.alissa.ocr.Ocr;
 /***
  * Provides a series of static methods for number place puzzle board
  * recognition.
+ * <p>
+ * This class requires OpenCV (i.e., {@link org.opencv}.)
+ * It is a caller's responsibility to load and to initialize the OpenCV library
+ * before using this class.
  *
  * @author alissa
  */
@@ -137,7 +141,8 @@ public class ImageProcessing {
     }
 
     /***
-     * Make a gray scale image from an RGBA image, denoising.
+     * Make a gray scale image from an RGBA image,
+     * removing some noise.
      *
      * @param src
      *            An RGBA image of type CV_8UC4.
@@ -483,6 +488,9 @@ public class ImageProcessing {
      */
     private static boolean recognizeDigits(Ocr ocr, Mat src, byte[][] puzzle) {
 
+    	final Mat tmp = new Mat();
+    	level(src, tmp);
+
         // We recognize a digit by focusing on a relatively small area
         // that the digit is expected to be in.  The area is the
         // estimated cell plus some margin around it.
@@ -509,7 +517,7 @@ public class ImageProcessing {
                 // estimated grid.
                 roi.x = UNIT / 2 + x * UNIT;
                 roi.y = UNIT / 2 + y * UNIT;
-                final Mat focused = src.submat(roi);
+                final Mat focused = tmp.submat(roi);
 
                 // Try to recognize a digit in the focused area.
                 final String digit = recognizeOneDigit(ocr, focused);
@@ -528,8 +536,25 @@ public class ImageProcessing {
             }
         }
 
+        tmp.release();
+
         return true;
     }
+
+    private static final int sKernelSize = (UNIT + UNIT / 4) | 1;
+
+	private static void level(Mat src, Mat dst) {
+		final Mat t1 = new Mat();
+		final Mat t2 = new Mat();
+
+		Imgproc.GaussianBlur(src, t1, new Size(sKernelSize, sKernelSize), 0, 0, Imgproc.BORDER_REPLICATE);
+		Core.addWeighted(src, 0.5, t1, -0.5, 127.5, t2);
+		//t2.copyTo(dst);
+		Imgproc.threshold(t2, dst, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
+
+		t1.release();
+		t2.release();
+	}
 
     /***
      * Recognize a digit in an image of a focused area. It is expected that the
@@ -561,16 +586,15 @@ public class ImageProcessing {
         // border lines from the background, and the empty area inside
         // the cell will be (almost) empty after thresholding.
         final Mat tmp = new Mat();
-        Imgproc.threshold(src, tmp, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
-    	mDebug.dump(src);
-    	mDebug.dump(tmp);
+        Imgproc.threshold(src, tmp, 128, 255, Imgproc.THRESH_BINARY_INV); // XXX
+        mDebug.dump(src);
+    	//mDebug.dump(tmp);
 
         // Run the blob analysis on the focused area to detect a blob
         // for the digit.
         final List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         final Mat hierarchy = new Mat();
-        Imgproc.findContours(tmp, contours, hierarchy, Imgproc.RETR_CCOMP,
-                Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(tmp, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
         // Among the blobs, detect one for the digit, and return its
         // bounding rectangle.
