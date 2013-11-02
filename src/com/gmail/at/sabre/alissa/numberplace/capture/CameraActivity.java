@@ -1,17 +1,11 @@
 package com.gmail.at.sabre.alissa.numberplace.capture;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
-import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -35,65 +29,18 @@ import com.gmail.at.sabre.alissa.numberplace.R;
  * picture is returned from the ACTION_IMAGE_CAPTURE activity is not documented
  * well and there are a lot of actual differences among implementations. I don't
  * want to write codes to handle tons of separate cases.
- * <p>
- * TODO: For now a picture is taken only by touching on the screen. It should
- * accept D-pad OK and 'shutter' button, if ones are available on the device.
- * <p>
- * IMPLEMENTATION NOTE: All CameraActivity methods are invoked by the UI thread
- * (Activity's main thread). Time consuming tasks are passed to another thread
- * (mThread) through Handler.
  *
  * @author alissa
  */
-public class CameraActivity extends Activity implements SurfaceHolder.Callback, View.OnClickListener {
+public class CameraActivity extends Activity
+		implements SurfaceHolder.Callback, View.OnClickListener, CameraThread.Callback {
 
     private static final String TAG = "numberplace..CameraActivity";
 
-    /***
-     * The maximum size in pixels of the picture that this Activity takes. It
-     * tries to take the largest picture that is supported by the hardware
-     * and whose width and height don't exceed this maximum.
-     */
-    private static final int MAX_SIZE = 1024;
-
-    /***
-     * List of known focus modes in the order of this app's preferences. The
-     * first supported mode will be used unless the camera is in an unknown
-     * mode.
-     * <p>
-     * Note that the list contains some values that are not available on this
-     * app's lowest supported Android version (2.2 (API8)), but it is no
-     * problem. The values are read from the .class file of
-     * {@link android.hardware.Camera.Parameters} during compile time, and plain
-     * string constants are stored in the DEX file.
-     */
-    @SuppressLint("InlinedApi")
-    private static final String[] FOCUS_MODE_PREFERENCES = {
-        Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE,
-        Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO,
-        Camera.Parameters.FOCUS_MODE_EDOF,
-        Camera.Parameters.FOCUS_MODE_MACRO,
-        Camera.Parameters.FOCUS_MODE_AUTO,
-        Camera.Parameters.FOCUS_MODE_FIXED,
-        Camera.Parameters.FOCUS_MODE_INFINITY,
-    };
-
-    private SurfaceHolder mHolder;
-
-    private View mContentView;
-
     private Handler mHandler;
 
-    private Camera mCamera;
-
-    private boolean mAutoFocusRequired;
-
-    /***
-     * The thread that directly accesses the camera. Note that {@link #mCamera}
-     * and {@link #mAutoFocusRequired} logically belong to this thread, and the
-     * activity's main thread (our UI thread) never touches them.
-     */
-    private CameraThread mThread;
+    /*** The thread that owns and directly accesses the camera. */
+    private CameraThread mCameraThread;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -101,295 +48,171 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
-        mContentView = findViewById(R.id.content_view);
+        findViewById(R.id.content_view).setOnClickListener(this);
 
-        mHolder = ((SurfaceView)findViewById(R.id.surfaceView)).getHolder();
-        mHolder.addCallback(this);
-        initHolder(mHolder);
+        final SurfaceHolder holder = ((SurfaceView)findViewById(R.id.surfaceView)).getHolder();
+        holder.addCallback(this);
+        setSurfaceType(holder);
+
+        mCameraThread = new CameraThread(this);
 
         mHandler = new Handler();
     }
 
+    /***
+     * Set the type of a {@link SurfaceHolder} to {@link SurfaceHolder#SURFACE_TYPE_PUSH_BUFFERS}.
+     * <p>
+     * Although Google deprecated both {@link SurfaceHolder#setType(int)}
+     * method and {@link SURFACE_TYPE_PUSH_BUFFERS} constant
+     * and let lint alert on it, the call is absolutely
+     * needed on Android devices before API 11 (3.0).
+     * @param holder
+     */
     @SuppressWarnings("deprecation")
-    private static void initHolder(SurfaceHolder holder) {
-        // Although Google deprecated SURFACE_TYPE_PUSH_BUFFERS
-        // and lint alerts on it, the call is absolutely
-        // needed on Android devices before API 11 (3.0).
-        // We can't live without one.
+    private static void setSurfaceType(final SurfaceHolder holder) {
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
     public void surfaceCreated(final SurfaceHolder holder) {
         Log.i(TAG, "surfaceCreated");
-
-        mThread = new CameraThread();
-        mThread.start();
-
-        mThread.post(new Runnable() {
-            public void run() {
-                mCamera = Camera.open();
-                if (mCamera == null) {
-                    // TODO: this event should be notified to user.
-                    throw new RuntimeException("Can't open the default camera");
-                }
-
-                // Get the camera parameters.
-                final Camera.Parameters params = mCamera.getParameters();
-
-                // Find and use a reasonable picture size. We will use a largest
-                // size whose width and height are both within the MAX_SIZE. If
-                // there are multiple candidates (and usually they are), choose
-                // the one with the longest shorter side.
-                // Note that a usual number place puzzle board is a right square.
-                List<Camera.Size> list = params.getSupportedPictureSizes();
-                final Camera.Size ZERO = mCamera.new Size(0, 0);
-                Camera.Size optimal = ZERO;
-                // Look for the _real_ optimal size.
-                for (int i = 0; i < list.size(); i++) {
-                    final Camera.Size size = list.get(i);
-                    if (Math.max(size.width, size.height) <= MAX_SIZE
-                        && (Math.min(size.width, size.height) > Math.min(optimal.width, optimal.height)
-                            || (Math.min(size.width, size.height) == Math.min(optimal.width, optimal.height)
-                                && Math.max(size.width, size.height) < Math.max(optimal.width, optimal.height)))) {
-                        optimal = size;
-                    }
-                }
-                // If no such size is available, i.e., if all supported sizes
-                // exceeded the app's maximum, use the minimum one as a fall back.
-                if (optimal == ZERO) {
-                    optimal = list.get(0);
-                    for (int i = 1; i < list.size(); i++) {
-                        final Camera.Size size = list.get(i);
-                        if (size.width * size.height < optimal.width * optimal.height) {
-                            optimal = size;
-                        }
-                    }
-                }
-
-                // Find a matching preview size with the optimal picture size.
-                // It should have exactly same aspect ratio as optimal size
-                // and should not be too large.
-                list = params.getSupportedPreviewSizes();
-                Camera.Size preview = ZERO;
-                for (int i = 0; i < list.size(); i++) {
-                    Camera.Size size = list.get(i);
-                    if (size.width * optimal.height == size.height * optimal.width
-                        && size.width <= optimal.width && size.width > preview.width) {
-                        preview = size;
-                    }
-                }
-                // Since preview is a preview, all picture size should have at
-                // least one preview size that has a same aspect ratio with the
-                // picture size and whose size is smaller than or at least equal
-                // to the picture size.
-                // The following is the last resort fall back that will never be used.
-                if (preview == ZERO) preview = list.get(0);
-
-                // Update the camera parameter if needed.
-                if (params.getPictureSize() != optimal || params.getPreviewSize() != preview) {
-                    params.setPictureSize(optimal.width, optimal.height);
-                    params.setPreviewSize(preview.width, preview.height);
-                    mCamera.setParameters(params);
-                }
-
-                // Next, take care of focus mode.
-                String currentFocusMode = params.getFocusMode();
-                List<String> supportedFocusModes = params.getSupportedFocusModes();
-                int currentModePreference = Arrays.asList(FOCUS_MODE_PREFERENCES).indexOf(currentFocusMode);
-                if (currentModePreference >= 0) {
-                    // We know the current focus mode. Use a more preferred mode
-                    // if the camera supports one.
-                    for (int i = 0; i < currentModePreference; i++) {
-                        if (supportedFocusModes.indexOf(FOCUS_MODE_PREFERENCES[i]) >= 0) {
-                            // Yes it does.  Use this mode.
-                            currentFocusMode = FOCUS_MODE_PREFERENCES[i];
-                            params.setFocusMode(currentFocusMode);
-                            mCamera.setParameters(params);
-                            break;
-                        }
-                    }
-                }
-
-                // Record whether the chosen (or default) focus mode requires
-                // app issued auto-focus.
-                mAutoFocusRequired =
-                        currentFocusMode.equals(Camera.Parameters.FOCUS_MODE_AUTO) ||
-                        currentFocusMode.equals(Camera.Parameters.FOCUS_MODE_MACRO);
-
-                // Pass the decided preview size to UI thread so that it can
-                // resize the surface view appropriately.
-                final int pw = preview.width;
-                final int ph = preview.height;
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        onPreviewSizeDecided(pw, ph);
-                    }
-                });
-            }
-        });
+        mCameraThread.start();
+        mCameraThread.initialize(holder);
     }
 
-    private void onPreviewSizeDecided(final int pw, final int ph) {
+    /***
+     * Adjust the surface view size
+     * to match its aspect ratio with the specified preview size's.
+     * This method is Called by {@link CameraThread}
+     * when an appropriate camera preview size
+     * is decided during its initialization.
+     * We need to use {@link Handler} since it is invoked by a no UI thread.
+     *
+     * @param pw preview width
+     * @param ph preview height
+     */
+    public void onPreviewSizeDecided(final int pw, final int ph) {
         Log.i(TAG, "onPreviewSizeDetected");
-
-        // Resize the surface view to have the same aspect ratio as
-        // the camera preview.
-        // Assuming it is now of its maximum size,
-        // reduce the length of one side to match the aspect ratio.
-        final SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceView);
-        final int vw = surfaceView.getWidth();
-        final int vh = surfaceView.getHeight();
-        final int nw, nh;
-        if (pw * vh > vw * ph) {
-            nw = vw;
-            nh = vw * ph / pw;
-        } else {
-            nw = vh * pw / ph;
-            nh = vh;
-        }
-        if (Math.abs(vw - nw) > 1 || Math.abs(vh - nh) > 1) {
-            final ViewGroup.LayoutParams layoutParams = surfaceView.getLayoutParams();
-            layoutParams.width = nw;
-            layoutParams.height = nh;
-            surfaceView.setLayoutParams(layoutParams);
-        }
-
-        // We have the surface view resized properly.  Start camera preview now.
-        final SurfaceHolder holder = surfaceView.getHolder();
-        mThread.post(new Runnable() {
-            public void run() {
-                try {
-                    mCamera.setPreviewDisplay(holder);
-                } catch (IOException e) {
-                    // We can't capture if this happened...
-                    // TODO: this event should be notified to user, too.
-                    throw new RuntimeException("Can't preview camera", e);
-                }
-                mCamera.startPreview();
-            }
-        });
-
-        mContentView.setOnClickListener(this);
+        mHandler.post(new Runnable() {
+			public void run() {
+		        // Resize the surface view to have the same aspect ratio as
+		        // the camera preview.
+		        // Assuming it is now of its maximum size,
+		        // reduce the length of one side to match the aspect ratio.
+		        final SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceView);
+		        final int vw = surfaceView.getWidth();
+		        final int vh = surfaceView.getHeight();
+		        final int nw, nh;
+		        if (pw * vh > vw * ph) {
+		            nw = vw;
+		            nh = vw * ph / pw;
+		        } else {
+		            nw = vh * pw / ph;
+		            nh = vh;
+		        }
+		        // The one pixel allowance is to cover the errors from integral division.
+		        if (Math.abs(vw - nw) > 1 || Math.abs(vh - nh) > 1) {
+		            final ViewGroup.LayoutParams layoutParams = surfaceView.getLayoutParams();
+		            layoutParams.width = nw;
+		            layoutParams.height = nh;
+		            surfaceView.setLayoutParams(layoutParams);
+		        }
+			}
+		});
     }
 
     public void surfaceChanged(final SurfaceHolder holder, final int format, final int width, final int height) {
         Log.i(TAG, "surfaceChanged");
 
-        // I'm surprised to find I have nothing to do here. It appears because
+        // I'm surprised to find I have nothing to do here. The reason appears that
         // the camera preview code takes care of everything we need to do when
         // the surface is changed. Thank you, Google!
     }
 
+    /***
+     * This method is called back when anywhere on the screen is touched.
+     * We use it as a trigger to take a picture.
+     */
     public void onClick(View v) {
-        mContentView.setOnClickListener(null);
-        final int rotation = getWindowManager().getDefaultDisplay().getRotation();
-
-        // Yes, the following spaghetti of callback is messy.  I know.
-        // What I don't know is how to rewrite it...
-        final Runnable shoot = new Runnable() {
-            public void run() {
-                mCamera.takePicture(new Camera.ShutterCallback() {
-                    public void onShutter() {
-                    }
-                },
-                null,
-                new Camera.PictureCallback() {
-                    // This callback is for JPEG, by the way.
-                    public void onPictureTaken(final byte[] data, Camera camera) {
-                        final byte[] copy = data.clone();
-                        mHandler.post(new Runnable() {
-                            public void run() {
-                                camera_onPictureTaken(copy, rotation);
-                            }
-                        });
-                    }
-                });
-            }
-        };
-        mThread.post(new Runnable() {
-            public void run() {
-                // I've heard a rumor that in some device, invoking Camera.autoFocus
-                // when not in MACRO/AUTO focus mode throws an Exception, though it is
-                // contrary to the Android API document.  We can't simply call it
-                // always.
-                if (mAutoFocusRequired) {
-                    mCamera.autoFocus(new Camera.AutoFocusCallback() {
-                        public void onAutoFocus(boolean success, Camera camera) {
-                            mThread.post(shoot);
-                        }
-                    });
-                } else {
-                    mThread.post(shoot);
-                }
-            }
-        });
+   		mCameraThread.focus();
+   		mCameraThread.shoot();
     }
 
-    private void camera_onPictureTaken(final byte[] data, int rotation) {
-        Log.i(TAG, "camera_onPictureTaken");
+    @Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+    	switch (keyCode) {
+    	case KeyEvent.KEYCODE_FOCUS:
+    		if (event.getRepeatCount() == 0) {
+    			mCameraThread.focus();
+    		}
+    		return true;
+    	case KeyEvent.KEYCODE_CAMERA:
+    		if (event.getRepeatCount() == 0) {
+    			mCameraThread.shoot();
+    		}
+    		return true;
+    	case KeyEvent.KEYCODE_DPAD_CENTER:
+    		if (event.getRepeatCount() == 0) {
+	   			mCameraThread.focus();
+	   			mCameraThread.shoot();
+    		}
+   			return true;
+    	default:
+    		return super.onKeyDown(keyCode, event);
+    	}
+	}
 
-        Intent result = new Intent();
-        result.putExtra(K.EXTRA_IMAGE_DATA, data);
-        result.putExtra(K.EXTRA_DEVICE_ROTATION, rotation);
-        setResult(RESULT_OK, result);
-        finish();
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_FOCUS:
+			if (mCameraThread != null) {
+				mCameraThread.unlockFocus();
+			}
+			return true;
+		case KeyEvent.KEYCODE_CAMERA:
+		case KeyEvent.KEYCODE_DPAD_CENTER:
+			return true;
+		default:
+			return super.onKeyUp(keyCode, event);
+		}
+	}
+
+	/***
+     * {@link CameraThread} calls this method when it finished taking a picture.
+     *
+     * @param data
+     *            JPEG data of the taken picture.
+     *            The content may be invalid after returning from this method.
+     */
+    public void onPictureTaken(final byte[] data) {
+        Log.i(TAG, "camera_onPictureTaken");
+        // The array data is accessed later through the Handler.
+        // We need to save its content in our own array.
+        final byte[] copy = data.clone();
+        mHandler.post(new Runnable() {
+			public void run() {
+		        Intent result = new Intent();
+		        result.putExtra(K.EXTRA_IMAGE_DATA, copy);
+		        result.putExtra(K.EXTRA_DEVICE_ROTATION, getWindowManager().getDefaultDisplay().getRotation());
+		        setResult(RESULT_OK, result);
+		        finish();
+			}
+		});
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.i(TAG, "onDestroy");
+        super.onDestroy();
     }
 
     public void surfaceDestroyed(final SurfaceHolder holder) {
         Log.i(TAG, "surfaceDestroyed");
-
-        mContentView.setOnClickListener(null);
-
-        mThread.post(new Runnable() {
-            public void run() {
-                // I'm not sure the following three consecutive try-catch blocks are really needed...
-                try {
-                    mCamera.stopPreview();
-                } catch (Throwable e) {
-                }
-                try {
-                    mCamera.cancelAutoFocus();
-                } catch (Throwable e) {
-                }
-                try {
-                    mCamera.release();
-                } catch (Throwable e) {
-                }
-                mCamera = null;
-
-                mThread.quit();
-            }
-        });
-
+        mCameraThread.quit();
         try {
-            mThread.join();
+            mCameraThread.join();
         } catch (InterruptedException e) {
             // I don't think we need to take care of the case.
-        }
-        mThread = null;
-    }
-
-    /***
-     * The thread that accesses the camera device. It uses {@link Handler} to
-     * execute the {@link #post}'ed actions in sequence.
-     *
-     * @author alissa
-     */
-    private class CameraThread extends HandlerThread {
-        protected Handler mHandler;
-
-        public CameraThread() {
-            super(CameraThread.class.getName());
-        }
-
-        @Override
-        public synchronized void start() {
-            super.start();
-            mHandler = new Handler(getLooper());
-        }
-
-        public boolean post(Runnable r) {
-            return mHandler.post(r);
         }
     }
 
@@ -423,10 +246,5 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback, 
         super.onStop();
     }
 
-    @Override
-    protected void onDestroy() {
-        Log.i(TAG, "onDestroy");
-        super.onDestroy();
-    }
 
 }
