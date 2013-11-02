@@ -1,3 +1,5 @@
+<img alt="app icon" src="ic_launcher-web.png" width="160" height="160" style="float: right" />
+
 NumberPlace
 ===========
 
