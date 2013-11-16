@@ -54,15 +54,11 @@ public class ImageProcessing {
      *            An OCR engine to use when recognizing digits.
      * @param source
      *            The source image of a number place puzzle. It is not modified.
-     * @param result
-     *            An empty Mat object to receive an image data showing a
-     *            detected puzzle board. It is primarily for debugging. Set to
-     *            null if you don't want to receive it.
      * @param puzzle
      *            A nine by nine array to receive the recognized puzzle.
      * @return True if a puzzle is successfully recognized.
      */
-    public static boolean recognize(Ocr ocr, Mat source, Mat result, byte[][] puzzle) {
+    public static boolean recognize(Ocr ocr, Mat source, byte[][] puzzle) {
 
         // Recognize the puzzle board and get a right-fit image of the
         // board.
@@ -72,12 +68,6 @@ public class ImageProcessing {
         // Recognize fixed digits on the board.  We rely on the grid
         // inferred by the puzzle frame to locate the digits.
         if (ok) ok = recognizeDigits(ocr, right, puzzle);
-
-        // Show this method's understanding of the puzzle board, if
-        // requested.  This is primarily for debugging.
-        if (ok && result != null) {
-            ok = prepareDebugImage(right, result);
-        }
 
         right.release();
 
@@ -436,36 +426,6 @@ public class ImageProcessing {
         goalMat.release();
         quadMat.release();
         tmp.release();
-    }
-
-    /***
-     * Draw the estimated grid lines on the right image. This is primarily to
-     * help debugging the puzzle frame detection ({@link
-     * #chooseFrameContour(Size, List<MatOfPoint>, Mat)}) and quad-fit (
-     * {@link QuadrangleFitter}) codes.
-     *
-     * @param right
-     *            The right image of the puzzle as created by {@link
-     *            #chooseFrameContour(Size, List<MatOfPoint>, Mat)}.
-     * @param result
-     *            The right image with estimated grid lines.
-     * @return
-     *            True.
-     */
-    private static boolean prepareDebugImage(Mat right, Mat result) {
-
-        final Mat tmp = new Mat();
-        Imgproc.cvtColor(right, tmp, Imgproc.COLOR_GRAY2RGBA);
-
-        Scalar color = new Scalar(255, 0, 0, 255); // opaque red
-        for (int i = UNIT; i <= UNIT * 10; i += UNIT) {
-            Core.line(tmp, new Point(i, UNIT), new Point(i, UNIT * 10), color);
-            Core.line(tmp, new Point(UNIT, i), new Point(UNIT * 10, i), color);
-        }
-        tmp.copyTo(result);
-
-        tmp.release();
-        return true;
     }
 
     /***

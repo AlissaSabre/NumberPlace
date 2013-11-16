@@ -19,7 +19,7 @@ import com.gmail.at.sabre.alissa.ocr.Ocr;
 class CaptureWorkerThread extends Thread {
 
     public interface Callback {
-        public void onPuzzleRecognized(byte[][] puzzle, Bitmap bitmap);
+        public void onPuzzleRecognized(byte[][] puzzle);
     }
 
     private Callback mCallback = null;
@@ -87,7 +87,7 @@ class CaptureWorkerThread extends Thread {
     }
 
     /***
-     * This method is called back by the runtime system as usual.
+     * This method is called back by the Thread runtime system as usual.
      */
     @Override
     public void run() {
@@ -98,44 +98,55 @@ class CaptureWorkerThread extends Thread {
             }
         } catch (InterruptedException e) {
             // Note this can happen under normal course of operation, e.g., if
-            // a user pressed the BACK button on the camera activity.
+            // a user pressed a BACK button on the capture activity.
             return;
         }
+        if (mQuit) return;
 
-        Bitmap captured = null;
-        byte[][] puzzle = null;
-        if (mBitmap != null) {
-            puzzle = new byte[9][9];
-            captured = recognize(mOcr, mBitmap, puzzle);
-            if (captured == null) puzzle = null;
-        }
+        // A bitmap is ready. Try recognizing a puzzle on it.
+        byte[][] puzzle = new byte[9][9];
+        boolean captured = recognize(mOcr, mBitmap, puzzle);
+        if (!captured) puzzle = null;
 
+        // Invoke a callback.
         Callback callback = mCallback;
         if (callback != null) {
-            callback.onPuzzleRecognized(puzzle, captured);
+            callback.onPuzzleRecognized(puzzle);
         }
     }
 
-    private static Bitmap recognize(Ocr ocr, Bitmap src_bitmap, byte[][] puzzle) {
+    /***
+     * Convert an Android bitmap image to an OpenCV Mat image,
+     * then call {@link ImageProcessing#recognize(Ocr, Mat, byte[][])}
+     * to recognize a puzzle on the image.
+     * We make the image format conversion here (not in {@link ImageProcessing})
+     * so that it is independent from Android specific classes and
+     * can be run on any platform/framework.
+     *
+     * @param ocr
+     *            An OCR engine
+     * @param src_bitmap
+     *            A source bitmap image in {@link Config#RGB_565} or {@link Config#ARGB_8888}.
+     * @param puzzle
+     *            A 9x9 array to receive a recognized puzzle
+     * @return
+     *            True if a puzzle is successfully recognized
+     */
+    private static boolean recognize(Ocr ocr, Bitmap src_bitmap, byte[][] puzzle) {
         if (src_bitmap.getConfig() != Config.RGB_565 &&
-            src_bitmap.getConfig() != Config.ARGB_8888) return null;
+            src_bitmap.getConfig() != Config.ARGB_8888) return false; // Just in case
 
         final Mat src = new Mat();
         Utils.bitmapToMat(src_bitmap, src);
-
-        final Mat dst = new Mat();
-        final boolean success = ImageProcessing.recognize(ocr, src, dst, puzzle);
-
-        Bitmap dst_bitmap = null;
-        if (success) {
-            dst_bitmap = Bitmap.createBitmap(dst.width(), dst.height(), Config.ARGB_8888);
-            Utils.matToBitmap(dst, dst_bitmap);
-        }
-
+        // I thought I can call src_bitmap.recycle() here, but it was wrong.
+        // The src_bitmap is shared with CaptureActivity, and the activity
+        // shows the bitmap on the screen when this thread is working.
+        // If we recycled it, the ImageView in CaptureActivity would crush
+        // when it needs to redraw the screen.
+        final boolean success = ImageProcessing.recognize(ocr, src, puzzle);
         src.release();
-        dst.release();
 
-        return dst_bitmap;
+        return success;
     }
 
 }

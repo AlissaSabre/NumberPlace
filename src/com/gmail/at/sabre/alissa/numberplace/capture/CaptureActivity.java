@@ -75,8 +75,8 @@ public class CaptureActivity extends Activity {
         mThread.setOcr(prepareOcr());
         mThread.setBitmap(bitmap);
         mThread.setCallback(new CaptureWorkerThread.Callback() {
-            public void onPuzzleRecognized(byte[][] puzzle, Bitmap bitmap) {
-                thread_onPuzzleRecognized(puzzle, bitmap);
+            public void onPuzzleRecognized(byte[][] puzzle) {
+                thread_onPuzzleRecognized(puzzle);
             }
         });
 
@@ -165,7 +165,7 @@ public class CaptureActivity extends Activity {
 		);
     }
 
-    private void thread_onPuzzleRecognized(final byte[][] puzzle, Bitmap bitmap) {
+    private void thread_onPuzzleRecognized(final byte[][] puzzle) {
         Log.i(TAG, puzzle == null ? "onPuzzleRecognized (puzzle == null)" : "onPuzzleRecognized (puzzle != null)");
         mHandler.post(new Runnable() {
             public void run() {
