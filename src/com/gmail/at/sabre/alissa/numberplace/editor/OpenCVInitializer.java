@@ -34,10 +34,8 @@ public class OpenCVInitializer {
 	 * Create an initializer object.
 	 * This constructor must be called by the UI thread.
 	 *
-	 * @param context
+	 * @param activity
 	 *            The Activity that uses OpenCV.
-	 * @param name
-	 *            The localized name of the application to be presented to the user that needs OpenCV.
 	 * @param version
 	 *            The version of OpenCV library that the application want to use.
 	 *            It should be one of the constants defined in {@link OpenCVLoader} as {@code OPENCV_VERSION_*}.
@@ -269,7 +267,7 @@ public class OpenCVInitializer {
 		 * from the hosting activity's resource using the following ids:
 		 * {@link R.string#opencv_title} for the title,
 		 * {@link R.string#opencv_install} for the message,
-		 * {@link R.string#opencv_cancel} for the positive button label,
+		 * {@link R.string#opencv_go} for the positive button label,
 		 * and {@link R.string#opencv_cancel} for the negative button label.
 		 * <p>
 		 * If the user acknowledged positively,
@@ -277,7 +275,7 @@ public class OpenCVInitializer {
 		 * <p>
 		 * After the user acknowledged the dialog,
 		 * an appropriate action of this callback's three actions
-		 * (i.e., {@link #mSuccess}, {@link #mFailure}, or {@link #mPending} will be run.
+		 * (i.e., {@link #mSuccess}, {@link #mFailure}, or {@link #mPending}) will be run.
 		 */
 		private void suggestInstallation() {
 			mHandler.post(new Runnable() {
