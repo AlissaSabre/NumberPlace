@@ -14,6 +14,18 @@ import org.sat4j.specs.TimeoutException;
  */
 public class PuzzleSolver {
 
+	/***
+	 * The dimension of the basic block.
+	 * It is 3 for a standard Number Place puzzle.
+	 */
+	private static final int N = 3;
+
+	/***
+	 * The dimension (i.e., both the height and the width) of the whole puzzle.
+	 * It is 9 for a standard Number Place puzzle.
+	 */
+	private static final int NN = N * N;
+
     private volatile boolean mIsStopped;
 
     private ISolver mSolver;
@@ -93,10 +105,10 @@ public class PuzzleSolver {
     private void addPuzzleRules() throws ContradictionException {
 
         // Each cell contains a digit.
-        for (int y = 0; y < 9; y++) {
-            for (int x = 0; x < 9; x++) {
-                final VecInt v = new VecInt(9);
-                for (int d = 1; d <= 9; d++) {
+        for (int y = 0; y < NN; y++) {
+            for (int x = 0; x < NN; x++) {
+                final VecInt v = new VecInt(NN);
+                for (int d = 1; d <= NN; d++) {
                     v.push(var(x, y, d));
                 }
                 mSolver.addClause(v);
@@ -105,10 +117,10 @@ public class PuzzleSolver {
 
         // No two digits share a same cell.
         // (Each cell contains only one digit.)
-        for (int d1 = 1; d1 <= 9; d1++) {
-            for (int d2 = d1 + 1; d2 <= 9; d2++) {
-                for (int y = 0; y < 9; y++) {
-                    for (int x = 0; x < 9; x++) {
+        for (int d1 = 1; d1 <= NN; d1++) {
+            for (int d2 = d1 + 1; d2 <= NN; d2++) {
+                for (int y = 0; y < NN; y++) {
+                    for (int x = 0; x < NN; x++) {
                         final VecInt v = new VecInt(2);
                         v.push(-var(x, y, d1));
                         v.push(-var(x, y, d2));
@@ -118,22 +130,11 @@ public class PuzzleSolver {
             }
         }
 
-        // Each row contains all 9 digits.
-        for (int y = 0; y < 9; y++) {
-            for (int d = 1; d <= 9; d++) {
-                final VecInt v = new VecInt(9);
-                for (int x = 0; x < 9; x++) {
-                    v.push(var(x, y, d));
-                }
-                mSolver.addClause(v);
-            }
-        }
-
         // No two cells in a row contain a same digit.
-        for (int y = 0; y < 9; y++) {
-            for (int x1 = 0; x1 < 9; x1++) {
-                for (int x2 = x1 + 1; x2 < 9; x2++) {
-                    for (int d = 1; d <= 9; d++) {
+        for (int y = 0; y < NN; y++) {
+            for (int x1 = 0; x1 < NN; x1++) {
+                for (int x2 = x1 + 1; x2 < NN; x2++) {
+                    for (int d = 1; d <= NN; d++) {
                         final VecInt v = new VecInt(2);
                         v.push(-var(x1, y, d));
                         v.push(-var(x2, y, d));
@@ -143,22 +144,11 @@ public class PuzzleSolver {
             }
         }
 
-        // Each column contains all 9 digits.
-        for (int x = 0; x < 9; x++) {
-            for (int d = 1; d <= 9; d++) {
-                final VecInt v = new VecInt(9);
-                for (int y = 0; y < 9; y++) {
-                    v.push(var(x, y, d));
-                }
-                mSolver.addClause(v);
-            }
-        }
-
         // No two cells in a column contain a same digit.
-        for (int x = 0; x < 9; x++) {
-            for (int y1 = 0; y1 < 9; y1++) {
-                for (int y2 = y1 + 1; y2 < 9; y2++) {
-                    for (int d = 1; d <= 9; d++) {
+        for (int x = 0; x < NN; x++) {
+            for (int y1 = 0; y1 < NN; y1++) {
+                for (int y2 = y1 + 1; y2 < NN; y2++) {
+                    for (int d = 1; d <= NN; d++) {
                         final VecInt v = new VecInt(2);
                         v.push(-var(x, y1, d));
                         v.push(-var(x, y2, d));
@@ -168,31 +158,16 @@ public class PuzzleSolver {
             }
         }
 
-        // Each 3x3 block contains all 9 digits.
-        for (int y0 = 0; y0 < 9; y0 += 3) {
-            for (int x0 = 0; x0 < 9; x0 += 3) {
-                for (int d = 1; d <= 9; d++) {
-                    final VecInt v = new VecInt(9);
-                    for (int p = 0; p < 9; p++) {
-                        final int x = x0 + p % 3;
-                        final int y = y0 + p / 3;
-                        v.push(var(x, y, d));
-                    }
-                    mSolver.addClause(v);
-                }
-            }
-        }
-
         // No two cells in a 3x3 block contain a same digit.
-        for (int y0 = 0; y0 < 9; y0 += 3) {
-            for (int x0 = 0; x0 < 9; x0 += 3) {
-                for (int p1 = 0; p1 < 9; p1++) {
-                    final int x1 = x0 + p1 % 3;
-                    final int y1 = y0 + p1 / 3;
-                    for (int p2 = p1 + 1; p2 < 9; p2++) {
-                        final int x2 = x0 + p2 % 3;
-                        final int y2 = y0 + p2 / 3;
-                        for (int d = 1; d <= 9; d++) {
+        for (int y0 = 0; y0 < NN; y0 += N) {
+            for (int x0 = 0; x0 < NN; x0 += N) {
+                for (int p1 = 0; p1 < NN; p1++) {
+                    final int x1 = x0 + p1 % N;
+                    final int y1 = y0 + p1 / N;
+                    for (int p2 = p1 + 1; p2 < NN; p2++) {
+                        final int x2 = x0 + p2 % N;
+                        final int y2 = y0 + p2 / N;
+                        for (int d = 1; d <= NN; d++) {
                             final VecInt v = new VecInt(2);
                             v.push(-var(x1, y1, d));
                             v.push(-var(x2, y2, d));
@@ -214,8 +189,8 @@ public class PuzzleSolver {
      *             When the puzzle included a trivial contradiction.
      */
     private void addInstanceConstraints(final byte[][] puzzle) throws ContradictionException {
-        for (int y = 0; y < 9; y++) {
-            for (int x = 0; x < 9; x++) {
+        for (int y = 0; y < NN; y++) {
+            for (int x = 0; x < NN; x++) {
                 final int d = puzzle[y][x];
                 if (d > 0) {
                     final VecInt v = new VecInt(1);
@@ -238,7 +213,7 @@ public class PuzzleSolver {
      */
     private byte[][] extractSolution() {
         int[] model = mSolver.model();
-        byte[][] solution = new byte[9][9];
+        byte[][] solution = new byte[NN][NN];
 
         for (int i = 0; i < model.length; i++) {
             final int id = model[i];
@@ -258,7 +233,7 @@ public class PuzzleSolver {
     /***
      * The number of SAT4J variables we need to represent a number place puzzle.
      */
-    private static final int MAXVAR = 9 * 9 * 9 + 1; // XXX: Do we really need '+1' here?
+    private static final int MAXVAR = NN * NN * NN + 1; // XXX: Do we really need '+1' here?
 
     /***
      * Find a SAT4J (Dimacs) variable id (number) to represent a digit in a
@@ -274,7 +249,7 @@ public class PuzzleSolver {
      * @return The variable id.
      */
     private static int var(int x, int y, int d) {
-        return x * 9 + y * 81 + d;
+        return x * NN + y * NN * NN + d;
     }
 
     /***
@@ -285,7 +260,7 @@ public class PuzzleSolver {
      * @return The X position in range 0..8.
      */
     private static int varX(int id) {
-        return (id - 1) / 9 % 9;
+        return (id - 1) / NN % NN;
     }
 
     /***
@@ -296,7 +271,7 @@ public class PuzzleSolver {
      * @return The Y position in range 0..8.
      */
     private static int varY(int id) {
-        return (id - 1) / 81;
+        return (id - 1) / (NN * NN);
     }
 
     /***
@@ -307,6 +282,6 @@ public class PuzzleSolver {
      * @return The digit in range 1..9.
      */
     private static int varD(int id) {
-        return (id - 1) % 9 + 1;
+        return (id - 1) % NN + 1;
     }
 }
