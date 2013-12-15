@@ -29,3 +29,10 @@ If you don't know what is Number Place or Sudoku, well, it's an addictive puzzle
 I wrote this app after reading [this excellent article] (http://bach.istc.kobe-u.ac.jp/copris/puzzles/sudoku/index.html) by Naoyuki Tamura.
 
 “数独” and/or “Sudoku” appear registered trademarks by NIKOLI Co., Ltd. in Japan and some other countries. Other names of the same puzzle, e.g. “ナンプレ”, “ナンバープレース”, “Number Place” may be trademarks of someone in somewhere on this planet.
+
+Directory Structure Changes
+---------------------------
+
+As of December 15, 2013, the directory structure of this repository was changed.  The root of the repository was the Eclipse project directory in a past, but it is now a parent directory of Eclipse projects.  Most of the contents that were in the repository root are now in the directory NumberPlace.
+
+Sorry for the inconvenience.
