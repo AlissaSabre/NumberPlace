@@ -20,7 +20,7 @@ Detailed Description
 
 Rest of this document is a longer detailed version of the description.
 
-Read below for a detailed step-by-step instructions.  Follow the steps in order will create a suitable environment for building Number Place Breaker.
+Read below for a detailed step-by-step instructions.  Following the steps in order will create a suitable environment for building Number Place Breaker.
 
 Prerequisits
 ------------
