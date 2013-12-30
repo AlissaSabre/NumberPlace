@@ -18,9 +18,7 @@ Otherwise, please keep reading.
 Detailed Description
 --------------------
 
-Rest of this document is a longer detailed version of the description.
-
-Read below for a detailed step-by-step instructions.  Following the steps in order will create a suitable environment for building Number Place Breaker.
+Rest of this document is a longer version of the description, i.e., a detailed step-by-step instruction.  Following the steps in order should create a suitable environment for building Number Place Breaker.
 
 Prerequisits
 ------------
@@ -47,7 +45,7 @@ Download Files from Github
 
 Clone (download) the NumberPlace repository on Github using a standalone (i.e., something that you can use when Eclipse is not running) git tool.  You can't use EGit (Eclipse plug-in for Git) for the purpose, because we want the root directory in the repository to be the workspace directory of Eclipse, where Eclipse puts .metadata, and it is not easy to use EGit to set do so.
 
-The following steps assumes you are using a command-line git, but a standalone GUI git tool (e.g., Tortoise Git for Windows) should also works.
+The following steps assumes you are using a command-line git, but a standalone GUI git tool (e.g., Tortoise Git for Windows) should also work.
 
 1. cd to a directory that you want to create the Eclipse workspace for the Number Place Breaker.
 2. Use the following command to clone (download) the repository:
@@ -65,7 +63,7 @@ Download OpenCV for Android SDK
     * The enclosing double quotation marks are not a part of the name.
     * Note that this directory name "OpenCV Library - 2.4.7.1" is a must for the following procedure to work.
 
-After the above steps, your workspace directory will look like:
+After the above steps, your workspace directory should look like:
 
 	NumberPlace/
 	    README.md
@@ -111,7 +109,7 @@ Import to Eclipse
 8. On the [Select a wizard to use for importing projects] page of the wizard, choose [Import existing projects] in [Wizard for project import] and issue [Next>].
 9. On the [Import Projects] page of the wizard, make sure you see two projects, "NumberPlaceBreaker" and "OpenCV Library - 2.4.7.1", in the list and both projects' check boxes are checked, then issue [Finish].
 
-Then, wait for a while until all the files are compiled.  You may clean and refresh projects several times.
+Then, wait for a while until all the files are compiled.  You may need to clean and refresh projects several times.
 
 
 
