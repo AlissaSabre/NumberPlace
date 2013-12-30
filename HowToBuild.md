@@ -13,6 +13,8 @@ If you are experienced with Git and Android, OpenCV, and SAT4J development, the 
 * You need to put SAT4J Core library files (*.jar files) in the project's "libs" directory.
 * You also need to add OpenCV Android SDK project in your workspace and put it into the Java Build Path.
 
+Otherwise, please keep reading.
+
 Detailed Description
 --------------------
 
